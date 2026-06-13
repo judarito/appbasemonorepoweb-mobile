@@ -13,12 +13,21 @@
     "lint": "turbo lint",
     "typecheck": "turbo typecheck",
     "format": "prettier --write .",
-    "clean": "turbo clean && rm -rf node_modules"
+    "clean": "turbo clean && rm -rf node_modules",
+    "db:start": "docker compose up -d",
+    "db:stop": "docker compose down",
+    "db:init": "bun run database/scripts/initialize-db.ts",
+    "db:studio": "drizzle-kit studio --config=database/drizzle.config.ts"
   },
   "devDependencies": {
-    "turbo": "^2.0.4",
-    "typescript": "^5.4.5",
+    "drizzle-kit": "^0.31.10",
     "eslint": "^8.57.0",
-    "prettier": "^3.2.5"
+    "prettier": "^3.2.5",
+    "turbo": "^2.0.4",
+    "typescript": "^5.4.5"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.45.2",
+    "postgres": "^3.4.9"
   }
 }
