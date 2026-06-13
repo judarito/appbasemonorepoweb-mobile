@@ -24,6 +24,8 @@ router.get("/permissions", async (c) => {
   });
 });
 
+
+
 // 2. GET /me/context
 router.get("/context", async (c) => {
   const user = c.get("user" as any);

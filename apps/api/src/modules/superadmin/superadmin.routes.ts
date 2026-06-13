@@ -17,4 +17,25 @@ router.get("/tenants/:id/users", controller.getTenantUsers);
 router.get("/tenants/:id/usage", controller.getTenantUsage);
 router.post("/support/session", controller.createSupportSession);
 
+// --- PLANS ROUTING ---
+router.get("/plans", controller.getPlans);
+router.post("/plans", controller.createPlan);
+router.get("/plans/:id", controller.getPlan);
+router.patch("/plans/:id", controller.updatePlan);
+router.delete("/plans/:id", controller.deletePlan);
+router.get("/plans/:id/features", controller.getPlanFeatures);
+router.post("/plans/:id/features", controller.savePlanFeatures);
+
+// --- FEATURES ROUTING ---
+router.get("/features", controller.getFeatures);
+router.post("/features", controller.createFeature);
+router.get("/features/:id", controller.getFeature);
+router.patch("/features/:id", controller.updateFeature);
+router.delete("/features/:id", controller.deleteFeature);
+
+// --- TENANT OVERRIDES ---
+router.get("/tenants/:id/features", controller.getTenantFeatures);
+router.post("/tenants/:id/features", controller.saveTenantFeatures);
+
 export { router as superadminRoutes };
+

@@ -9,6 +9,9 @@ import {
   permissions,
   subscriptions,
   plans,
+  features,
+  tenantFeatures,
+  planFeatures,
   tenantSettings,
   tenantUsage,
   auditLogs
@@ -374,4 +377,202 @@ export class SuperadminRepository {
       traceId: data.traceId ? data.traceId : null,
     });
   }
+
+  // --- PLANS CRUD ---
+  async findPlans(page: number, pageSize: number) {
+    const offset = (page - 1) * pageSize;
+    return await db
+      .select()
+      .from(plans)
+      .where(isNull(plans.deletedAt))
+      .orderBy(plans.sortOrder)
+      .limit(pageSize)
+      .offset(offset);
+  }
+
+  async countPlans(): Promise<number> {
+    const res = await db
+      .select({ value: count() })
+      .from(plans)
+      .where(isNull(plans.deletedAt));
+    return Number(res[0]?.value || 0);
+  }
+
+  async findPlanById(id: string) {
+    const res = await db
+      .select()
+      .from(plans)
+      .where(and(eq(plans.id, id), isNull(plans.deletedAt)))
+      .limit(1);
+    return res[0] || null;
+  }
+
+  async findPlanByCode(code: string) {
+    const res = await db
+      .select()
+      .from(plans)
+      .where(and(eq(plans.code, code), isNull(plans.deletedAt)))
+      .limit(1);
+    return res[0] || null;
+  }
+
+  async createPlan(data: any) {
+    const [inserted] = await db.insert(plans).values(data).returning();
+    return inserted;
+  }
+
+  async updatePlan(id: string, data: any) {
+    const [updated] = await db
+      .update(plans)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(plans.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deletePlan(id: string) {
+    const [deleted] = await db
+      .update(plans)
+      .set({ deletedAt: new Date() })
+      .where(eq(plans.id, id))
+      .returning();
+    return deleted;
+  }
+
+  async countPlanSubscriptions(planId: string): Promise<number> {
+    const res = await db
+      .select({ value: count() })
+      .from(subscriptions)
+      .where(
+        and(
+          eq(subscriptions.planId, planId),
+          isNull(subscriptions.deletedAt),
+          or(
+            eq(subscriptions.status, "ACTIVE"),
+            eq(subscriptions.status, "TRIALING"),
+            eq(subscriptions.status, "GRACE_PERIOD")
+          )
+        )
+      );
+    return Number(res[0]?.value || 0);
+  }
+
+  // --- FEATURES CRUD ---
+  async findFeatures(page: number, pageSize: number) {
+    const offset = (page - 1) * pageSize;
+    return await db
+      .select()
+      .from(features)
+      .orderBy(features.code)
+      .limit(pageSize)
+      .offset(offset);
+  }
+
+  async countFeatures(): Promise<number> {
+    const res = await db.select({ value: count() }).from(features);
+    return Number(res[0]?.value || 0);
+  }
+
+  async findFeatureById(id: string) {
+    const res = await db.select().from(features).where(eq(features.id, id)).limit(1);
+    return res[0] || null;
+  }
+
+  async findFeatureByCode(code: string) {
+    const res = await db.select().from(features).where(eq(features.code, code)).limit(1);
+    return res[0] || null;
+  }
+
+  async createFeature(data: any) {
+    const [inserted] = await db.insert(features).values(data).returning();
+    return inserted;
+  }
+
+  async updateFeature(id: string, data: any) {
+    const [updated] = await db
+      .update(features)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(features.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteFeature(id: string) {
+    const [deleted] = await db.delete(features).where(eq(features.id, id)).returning();
+    return deleted;
+  }
+
+  // --- PLAN FEATURES RELATION ---
+  async findPlanFeatures(planId: string) {
+    return await db
+      .select({
+        featureId: features.id,
+        code: features.code,
+        name: features.name,
+        valueType: features.valueType,
+        defaultValue: features.defaultValue,
+        enabled: planFeatures.enabled,
+        value: planFeatures.value,
+      })
+      .from(planFeatures)
+      .innerJoin(features, eq(planFeatures.featureId, features.id))
+      .where(eq(planFeatures.planId, planId));
+  }
+
+  async savePlanFeaturesTx(planId: string, featuresList: { featureId: string; enabled: boolean; value?: any }[]) {
+    return await db.transaction(async (tx) => {
+      await tx.delete(planFeatures).where(eq(planFeatures.planId, planId));
+
+      if (featuresList.length > 0) {
+        await tx.insert(planFeatures).values(
+          featuresList.map((f) => ({
+            planId,
+            featureId: f.featureId,
+            enabled: f.enabled,
+            value: f.value || null,
+          }))
+        );
+      }
+    });
+  }
+
+  // --- TENANT FEATURES OVERRIDES ---
+  async findTenantFeatures(tenantId: string) {
+    return await db
+      .select({
+        featureId: features.id,
+        code: features.code,
+        name: features.name,
+        valueType: features.valueType,
+        defaultValue: features.defaultValue,
+        enabled: tenantFeatures.enabled,
+        value: tenantFeatures.value,
+        validUntil: tenantFeatures.validUntil,
+      })
+      .from(tenantFeatures)
+      .innerJoin(features, eq(tenantFeatures.featureId, features.id))
+      .where(eq(tenantFeatures.tenantId, tenantId));
+  }
+
+  async saveTenantFeaturesTx(
+    tenantId: string,
+    featuresList: { featureId: string; enabled: boolean; value?: any; validUntil?: Date | null }[]
+  ) {
+    return await db.transaction(async (tx) => {
+      await tx.delete(tenantFeatures).where(eq(tenantFeatures.tenantId, tenantId));
+
+      if (featuresList.length > 0) {
+        await tx.insert(tenantFeatures).values(
+          featuresList.map((f) => ({
+            tenantId,
+            featureId: f.featureId,
+            enabled: f.enabled,
+            value: f.value || null,
+            validUntil: f.validUntil || null,
+          }))
+        );
+      }
+    });
+  }
 }
+

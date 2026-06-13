@@ -1,10 +1,19 @@
 import { SuperadminRepository } from "./superadmin.repository";
 import type { CreateTenantInput, UpdateTenantInput, SupportSessionInput } from "./superadmin.schema";
+import type {
+  CreatePlanInput,
+  UpdatePlanInput,
+  CreateFeatureInput,
+  UpdateFeatureInput,
+  AssociatePlanFeaturesInput,
+  OverrideTenantFeaturesInput
+} from "./plans.schema";
 import { ConflictError, NotFoundError, ForbiddenError } from "../../common/errors";
 import { sign } from "hono/jwt";
 import { env } from "../../config/env";
 import { db } from "../../database/db";
 import { permissions } from "../../database/schema";
+
 
 export class SuperadminService {
   private repository = new SuperadminRepository();
@@ -185,4 +194,274 @@ export class SuperadminService {
       expiresAt: new Date(exp * 1000).toISOString(),
     };
   }
+
+  // --- PLANS SERVICE ---
+  async getPlans(page: number, pageSize: number) {
+    const [items, totalItems] = await Promise.all([
+      this.repository.findPlans(page, pageSize),
+      this.repository.countPlans(),
+    ]);
+    return { items, totalItems };
+  }
+
+  async getPlan(id: string) {
+    const plan = await this.repository.findPlanById(id);
+    if (!plan) {
+      throw new NotFoundError(`Plan con ID '${id}' no encontrado.`);
+    }
+    return plan;
+  }
+
+  async createPlan(
+    data: CreatePlanInput,
+    actorUserId: string,
+    sessionId: string | null,
+    traceId?: string
+  ) {
+    const duplicate = await this.repository.findPlanByCode(data.code);
+    if (duplicate) {
+      throw new ConflictError(`El código de plan '${data.code}' ya está en uso.`);
+    }
+
+    const plan = await this.repository.createPlan({
+      ...data,
+      price: String(data.price),
+    });
+
+    await this.repository.logAudit({
+      tenantId: null,
+      actorUserId,
+      sessionId,
+      action: "PLAN_CREATE",
+      entityType: "PLAN",
+      entityId: plan.id,
+      result: "SUCCESS",
+      metadata: { code: plan.code },
+      traceId,
+    });
+
+    return plan;
+  }
+
+  async updatePlan(
+    id: string,
+    data: UpdatePlanInput,
+    actorUserId: string,
+    sessionId: string | null,
+    traceId?: string
+  ) {
+    await this.getPlan(id);
+
+    const payload: any = { ...data };
+    if (data.price !== undefined) {
+      payload.price = String(data.price);
+    }
+
+    const plan = await this.repository.updatePlan(id, payload);
+
+    await this.repository.logAudit({
+      tenantId: null,
+      actorUserId,
+      sessionId,
+      action: "PLAN_UPDATE",
+      entityType: "PLAN",
+      entityId: id,
+      result: "SUCCESS",
+      metadata: data,
+      traceId,
+    });
+
+    return plan;
+  }
+
+  async deletePlan(
+    id: string,
+    actorUserId: string,
+    sessionId: string | null,
+    traceId?: string
+  ) {
+    await this.getPlan(id);
+
+    const activeSubscriptions = await this.repository.countPlanSubscriptions(id);
+    if (activeSubscriptions > 0) {
+      throw new ConflictError("No se puede eliminar un plan que tiene suscripciones activas.");
+    }
+
+    const plan = await this.repository.deletePlan(id);
+
+    await this.repository.logAudit({
+      tenantId: null,
+      actorUserId,
+      sessionId,
+      action: "PLAN_DELETE",
+      entityType: "PLAN",
+      entityId: id,
+      result: "SUCCESS",
+      metadata: null,
+      traceId,
+    });
+
+    return plan;
+  }
+
+  // --- FEATURES SERVICE ---
+  async getFeatures(page: number, pageSize: number) {
+    const [items, totalItems] = await Promise.all([
+      this.repository.findFeatures(page, pageSize),
+      this.repository.countFeatures(),
+    ]);
+    return { items, totalItems };
+  }
+
+  async getFeature(id: string) {
+    const feature = await this.repository.findFeatureById(id);
+    if (!feature) {
+      throw new NotFoundError(`Característica con ID '${id}' no encontrada.`);
+    }
+    return feature;
+  }
+
+  async createFeature(
+    data: CreateFeatureInput,
+    actorUserId: string,
+    sessionId: string | null,
+    traceId?: string
+  ) {
+    const duplicate = await this.repository.findFeatureByCode(data.code);
+    if (duplicate) {
+      throw new ConflictError(`El código de característica '${data.code}' ya está registrado.`);
+    }
+
+    const feature = await this.repository.createFeature(data);
+
+    await this.repository.logAudit({
+      tenantId: null,
+      actorUserId,
+      sessionId,
+      action: "FEATURE_CREATE",
+      entityType: "FEATURE",
+      entityId: feature.id,
+      result: "SUCCESS",
+      metadata: { code: feature.code },
+      traceId,
+    });
+
+    return feature;
+  }
+
+  async updateFeature(
+    id: string,
+    data: UpdateFeatureInput,
+    actorUserId: string,
+    sessionId: string | null,
+    traceId?: string
+  ) {
+    await this.getFeature(id);
+    const feature = await this.repository.updateFeature(id, data);
+
+    await this.repository.logAudit({
+      tenantId: null,
+      actorUserId,
+      sessionId,
+      action: "FEATURE_UPDATE",
+      entityType: "FEATURE",
+      entityId: id,
+      result: "SUCCESS",
+      metadata: data,
+      traceId,
+    });
+
+    return feature;
+  }
+
+  async deleteFeature(
+    id: string,
+    actorUserId: string,
+    sessionId: string | null,
+    traceId?: string
+  ) {
+    await this.getFeature(id);
+    const feature = await this.repository.deleteFeature(id);
+
+    await this.repository.logAudit({
+      tenantId: null,
+      actorUserId,
+      sessionId,
+      action: "FEATURE_DELETE",
+      entityType: "FEATURE",
+      entityId: id,
+      result: "SUCCESS",
+      metadata: null,
+      traceId,
+    });
+
+    return feature;
+  }
+
+  // --- PLAN FEATURES RELATION ---
+  async getPlanFeatures(planId: string) {
+    await this.getPlan(planId);
+    return await this.repository.findPlanFeatures(planId);
+  }
+
+  async savePlanFeatures(
+    planId: string,
+    data: AssociatePlanFeaturesInput,
+    actorUserId: string,
+    sessionId: string | null,
+    traceId?: string
+  ) {
+    await this.getPlan(planId);
+    await this.repository.savePlanFeaturesTx(planId, data.features);
+
+    await this.repository.logAudit({
+      tenantId: null,
+      actorUserId,
+      sessionId,
+      action: "PLAN_FEATURES_UPDATE",
+      entityType: "PLAN",
+      entityId: planId,
+      result: "SUCCESS",
+      metadata: { featuresCount: data.features.length },
+      traceId,
+    });
+  }
+
+  // --- TENANT FEATURES OVERRIDES ---
+  async getTenantFeatures(tenantId: string) {
+    await this.getTenant(tenantId);
+    return await this.repository.findTenantFeatures(tenantId);
+  }
+
+  async saveTenantFeatures(
+    tenantId: string,
+    data: OverrideTenantFeaturesInput,
+    actorUserId: string,
+    sessionId: string | null,
+    traceId?: string
+  ) {
+    await this.getTenant(tenantId);
+
+    const mappedList = data.features.map((f) => ({
+      featureId: f.featureId,
+      enabled: f.enabled,
+      value: f.value,
+      validUntil: f.validUntil ? new Date(f.validUntil) : null,
+    }));
+
+    await this.repository.saveTenantFeaturesTx(tenantId, mappedList);
+
+    await this.repository.logAudit({
+      tenantId,
+      actorUserId,
+      sessionId,
+      action: "TENANT_FEATURES_OVERRIDE",
+      entityType: "TENANT",
+      entityId: tenantId,
+      result: "SUCCESS",
+      metadata: { overridesCount: data.features.length },
+      traceId,
+    });
+  }
 }
+
