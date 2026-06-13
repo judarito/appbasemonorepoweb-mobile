@@ -9,6 +9,7 @@ import { db } from "./database/db";
 import { sql } from "drizzle-orm";
 import { openapiSpec } from "./common/openapi";
 import { usersRoutes } from "./modules/users/users.routes";
+import { authRoutes } from "./modules/auth/auth.routes";
 
 const app = new Hono<{ Variables: { traceId: string } }>();
 
@@ -92,6 +93,7 @@ v1.get("/", (c) => {
 });
 
 // Registrar rutas de módulos
+v1.route("/auth", authRoutes);
 v1.route("/users", usersRoutes);
 
 app.route("/api/v1", v1);
