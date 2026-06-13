@@ -13,6 +13,8 @@ import { authRoutes } from "./modules/auth/auth.routes";
 import { rolesRoutes } from "./modules/roles/roles.routes";
 import { meRoutes } from "./modules/me/me.routes";
 import { menusRoutes } from "./modules/menus/menus.routes";
+import { superadminRoutes } from "./modules/superadmin/superadmin.routes";
+
 
 
 const app = new Hono<{ Variables: { traceId: string } }>();
@@ -102,6 +104,8 @@ v1.route("/users", usersRoutes);
 v1.route("/roles", rolesRoutes);
 v1.route("/me", meRoutes);
 v1.route("/menus", menusRoutes);
+v1.route("/superadmin", superadminRoutes);
+
 
 
 app.route("/api/v1", v1);

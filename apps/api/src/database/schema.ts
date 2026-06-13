@@ -227,4 +227,93 @@ export const tenantFeatures = appSchema.table("tenant_features", {
   pk: primaryKey({ columns: [t.tenantId, t.featureId] }),
 }));
 
+// 15. CONFIGURACIÓN DEL INQUILINO (TENANT SETTINGS)
+export const tenantSettings = appSchema.table("tenant_settings", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  key: text("key").notNull(),
+  groupName: varchar("group_name", { length: 100 }).notNull().default("general"),
+  value: jsonb("value").notNull(),
+  valueType: varchar("value_type", { length: 30 }).notNull().default("STRING"),
+  isPublic: boolean("is_public").notNull().default(false),
+  isEncrypted: boolean("is_encrypted").notNull().default(false),
+  description: text("description"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// 16. SUSCRIPCIONES (SUBSCRIPTIONS)
+export const subscriptions = appSchema.table("subscriptions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  planId: uuid("plan_id").notNull().references(() => plans.id, { onDelete: "restrict" }),
+  status: varchar("status", { length: 30 }).notNull().default("TRIALING"),
+  billingCycle: varchar("billing_cycle", { length: 20 }).notNull().default("MONTHLY"),
+  quantity: integer("quantity").notNull().default(1),
+  currencyCode: char("currency_code", { length: 3 }).notNull().default("COP"),
+  unitPrice: decimal("unit_price", { precision: 14, scale: 2 }).notNull().default("0"),
+  startsAt: timestamp("starts_at", { withTimezone: true }).notNull().defaultNow(),
+  trialEndsAt: timestamp("trial_ends_at", { withTimezone: true }),
+  currentPeriodStart: timestamp("current_period_start", { withTimezone: true }),
+  currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }),
+  graceEndsAt: timestamp("grace_ends_at", { withTimezone: true }),
+  canceledAt: timestamp("canceled_at", { withTimezone: true }),
+  endedAt: timestamp("ended_at", { withTimezone: true }),
+  autoRenew: boolean("auto_renew").notNull().default(true),
+  externalProvider: varchar("external_provider", { length: 60 }),
+  externalCustomerId: varchar("external_customer_id", { length: 200 }),
+  externalSubscriptionId: varchar("external_subscription_id", { length: 200 }),
+  metadata: jsonb("metadata").notNull().default({}),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  deletedAt: timestamp("deleted_at", { withTimezone: true }),
+});
+
+// 17. LOGS DE AUDITORÍA (AUDIT LOGS)
+export const auditLogs = appSchema.table("audit_logs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: "set null" }),
+  actorUserId: uuid("actor_user_id").references(() => platformUsers.id, { onDelete: "set null" }),
+  sessionId: uuid("session_id").references(() => userSessions.id, { onDelete: "set null" }),
+  action: varchar("action", { length: 150 }).notNull(),
+  entityType: varchar("entity_type", { length: 150 }).notNull(),
+  entityId: varchar("entity_id", { length: 150 }),
+  result: varchar("result", { length: 20 }).notNull().default("SUCCESS"),
+  beforeData: jsonb("before_data"),
+  afterData: jsonb("after_data"),
+  metadata: jsonb("metadata").notNull().default({}),
+  ipAddress: varchar("ip_address", { length: 50 }),
+  userAgent: text("user_agent"),
+  traceId: uuid("trace_id"),
+  occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// 18. CARACTERÍSTICAS DEL PLAN (PLAN FEATURES)
+export const planFeatures = appSchema.table("plan_features", {
+  planId: uuid("plan_id").notNull().references(() => plans.id, { onDelete: "cascade" }),
+  featureId: uuid("feature_id").notNull().references(() => features.id, { onDelete: "cascade" }),
+  enabled: boolean("enabled").notNull().default(true),
+  value: jsonb("value"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => ({
+  pk: primaryKey({ columns: [t.planId, t.featureId] }),
+}));
+
+// 19. CONSUMO DEL INQUILINO (TENANT USAGE)
+export const tenantUsage = appSchema.table("tenant_usage", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  metricKey: text("metric_key").notNull(),
+  periodStart: timestamp("period_start", { withTimezone: true }).notNull(),
+  periodEnd: timestamp("period_end", { withTimezone: true }).notNull(),
+  usedValue: integer("used_value").notNull().default(0),
+  metadata: jsonb("metadata").notNull().default({}),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+
+
+
 

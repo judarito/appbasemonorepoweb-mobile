@@ -8,6 +8,7 @@ export interface AuthenticatedUser {
   tenantId: string | null;
   roles: string[];
   permissions: string[];
+  isSupport?: boolean;
 }
 
 export interface AuthenticatedSession {
@@ -35,6 +36,7 @@ export const requireAuth = async (c: Context, next: Next) => {
       tenantId: payload.tenantId,
       roles: payload.roles || [],
       permissions: payload.permissions || [],
+      isSupport: !!payload.isSupport,
     });
     
     c.set("session", {
@@ -46,6 +48,7 @@ export const requireAuth = async (c: Context, next: Next) => {
     throw new UnauthorizedError("Token de acceso inválido o expirado.");
   }
 };
+
 
 /**
  * Middleware para requerir un permiso específico.

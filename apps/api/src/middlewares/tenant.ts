@@ -46,8 +46,8 @@ export const tenantContext = async (c: Context, next: Next) => {
     throw new ForbiddenError("El inquilino (tenant) especificado está inactivo o suspendido.");
   }
 
-  // 3. Validar membresía activa del usuario en el tenant (excepto si es superadmin suplantando)
-  if (!user.roles.includes("SUPER_ADMIN")) {
+  // 3. Validar membresía activa del usuario en el tenant (excepto si es superadmin suplantando o en modo soporte)
+  if (!user.roles.includes("SUPER_ADMIN") && !user.isSupport) {
     const membership = await db
       .select()
       .from(tenantUsers)
