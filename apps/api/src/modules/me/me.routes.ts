@@ -4,6 +4,7 @@ import { tenantContext } from "../../middlewares/tenant";
 import { db } from "../../database/db";
 import { tenants } from "../../database/schema";
 import { eq, and, isNull } from "drizzle-orm";
+import { MenusService } from "../menus/menus.service";
 
 const router = new Hono<{ Variables: { traceId: string } }>();
 
@@ -67,4 +68,31 @@ router.get("/context", async (c) => {
   });
 });
 
+// 3. GET /me/menu
+router.get("/menu", async (c) => {
+  const user = c.get("user" as any);
+  const tenantId = c.get("tenantId" as any) as string | null;
+  const platform = c.req.query("platform") as "WEB" | "MOBILE" | "BOTH" | undefined;
+
+  const menusService = new MenusService();
+  const menuTree = await menusService.getUserMenuTree(
+    user.id,
+    tenantId,
+    platform,
+    user.permissions || []
+  );
+
+  return c.json({
+    success: true,
+    data: {
+      menu: menuTree,
+    },
+    meta: null,
+    traceId: c.get("traceId" as any),
+  });
+});
+
 export const meRoutes = router;
+
+
+

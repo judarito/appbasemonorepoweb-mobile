@@ -1,4 +1,5 @@
-import { pgSchema, text, varchar, timestamp, boolean, integer, jsonb, uuid, primaryKey } from "drizzle-orm/pg-core";
+import { pgSchema, text, varchar, timestamp, boolean, integer, jsonb, uuid, primaryKey, decimal, char } from "drizzle-orm/pg-core";
+
 
 export const appSchema = pgSchema("app");
 
@@ -145,3 +146,85 @@ export const refreshTokens = appSchema.table("refresh_tokens", {
   reuseDetectedAt: timestamp("reuse_detected_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+// 10. MENÚS DINÁMICOS
+export const menus = appSchema.table("menus", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: "cascade" }),
+  parentId: uuid("parent_id").references((): any => menus.id, { onDelete: "cascade" }),
+  code: text("code").notNull(),
+  label: varchar("label", { length: 150 }).notNull(),
+  description: text("description"),
+  route: varchar("route", { length: 300 }),
+  icon: varchar("icon", { length: 100 }),
+  sortOrder: integer("sort_order").notNull().default(0),
+  platform: varchar("platform", { length: 20 }).notNull().default("BOTH"),
+  requiredPermissionId: uuid("required_permission_id").references(() => permissions.id, { onDelete: "set null" }),
+  requiredFeatureCode: text("required_feature_code"),
+  isVisible: boolean("is_visible").notNull().default(true),
+  isActive: boolean("is_active").notNull().default(true),
+  metadata: jsonb("metadata").notNull().default({}),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  deletedAt: timestamp("deleted_at", { withTimezone: true }),
+});
+
+// 11. MENÚS POR ROL
+export const roleMenus = appSchema.table("role_menus", {
+  roleId: uuid("role_id").notNull().references(() => roles.id, { onDelete: "cascade" }),
+  menuId: uuid("menu_id").notNull().references(() => menus.id, { onDelete: "cascade" }),
+  isVisible: boolean("is_visible").notNull().default(true),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => ({
+  pk: primaryKey({ columns: [t.roleId, t.menuId] }),
+}));
+
+// 12. PLANES
+export const plans = appSchema.table("plans", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  code: text("code").notNull(),
+  name: varchar("name", { length: 150 }).notNull(),
+  description: text("description"),
+  status: varchar("status", { length: 20 }).notNull().default("ACTIVE"),
+  billingCycle: varchar("billing_cycle", { length: 20 }).notNull().default("MONTHLY"),
+  price: decimal("price", { precision: 14, scale: 2 }).notNull().default("0"),
+  currencyCode: char("currency_code", { length: 3 }).notNull().default("COP"),
+  trialDays: integer("trial_days").notNull().default(0),
+  isPublic: boolean("is_public").notNull().default(true),
+  isDefault: boolean("is_default").notNull().default(false),
+  sortOrder: integer("sort_order").notNull().default(0),
+  metadata: jsonb("metadata").notNull().default({}),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  deletedAt: timestamp("deleted_at", { withTimezone: true }),
+});
+
+// 13. CARACTERÍSTICAS (FEATURES)
+export const features = appSchema.table("features", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  code: text("code").notNull(),
+  name: varchar("name", { length: 150 }).notNull(),
+  description: text("description"),
+  valueType: varchar("value_type", { length: 20 }).notNull().default("BOOLEAN"),
+  defaultValue: jsonb("default_value"),
+  isSystem: boolean("is_system").notNull().default(true),
+  metadata: jsonb("metadata").notNull().default({}),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// 14. CARACTERÍSTICAS POR INQUILINO (TENANT FEATURES)
+export const tenantFeatures = appSchema.table("tenant_features", {
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  featureId: uuid("feature_id").notNull().references(() => features.id, { onDelete: "cascade" }),
+  enabled: boolean("enabled").notNull().default(true),
+  value: jsonb("value"),
+  validUntil: timestamp("valid_until", { withTimezone: true }),
+  metadata: jsonb("metadata").notNull().default({}),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => ({
+  pk: primaryKey({ columns: [t.tenantId, t.featureId] }),
+}));
+
+
