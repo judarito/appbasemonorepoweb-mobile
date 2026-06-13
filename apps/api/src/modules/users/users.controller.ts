@@ -8,8 +8,9 @@ export class UsersController {
   private service = new UsersService();
 
   getUsers = async (c: Context) => {
+    const tenantId = c.get("tenantId" as any) as string | null;
     const { page, pageSize } = parsePaginationParams(c);
-    const { items, totalItems } = await this.service.getUsers(page, pageSize);
+    const { items, totalItems } = await this.service.getUsers(tenantId, page, pageSize);
 
     return c.json({
       success: true,
@@ -22,8 +23,9 @@ export class UsersController {
   };
 
   getUser = async (c: Context) => {
+    const tenantId = c.get("tenantId" as any) as string | null;
     const id = c.req.param("id") as string;
-    const user = await this.service.getUserById(id);
+    const user = await this.service.getUserById(id, tenantId);
 
     return c.json({
       success: true,
@@ -34,6 +36,8 @@ export class UsersController {
   };
 
   createUser = async (c: Context) => {
+    // Nota: El tenantId no se toma del body por razones de seguridad (aislamiento).
+    // Si se requiere vincular al tenant del usuario autenticado, se puede asociar en capas superiores.
     const body = await c.req.json().catch(() => ({}));
     
     const parsed = createUserSchema.safeParse(body);
@@ -52,6 +56,7 @@ export class UsersController {
   };
 
   updateUser = async (c: Context) => {
+    const tenantId = c.get("tenantId" as any) as string | null;
     const id = c.req.param("id") as string;
     const body = await c.req.json().catch(() => ({}));
 
@@ -60,7 +65,7 @@ export class UsersController {
       throw new ValidationError("Los datos enviados no son válidos.", parsed.error.issues);
     }
 
-    const user = await this.service.updateUser(id, parsed.data);
+    const user = await this.service.updateUser(id, tenantId, parsed.data);
 
     return c.json({
       success: true,
@@ -71,8 +76,9 @@ export class UsersController {
   };
 
   deleteUser = async (c: Context) => {
+    const tenantId = c.get("tenantId" as any) as string | null;
     const id = c.req.param("id") as string;
-    const user = await this.service.deleteUser(id);
+    const user = await this.service.deleteUser(id, tenantId);
 
     return c.json({
       success: true,

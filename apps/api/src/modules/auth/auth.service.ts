@@ -87,37 +87,36 @@ export class AuthService {
     let userRolesList: string[] = [];
     let userPermissionsList: string[] = [];
 
-    if (resolvedTenantId) {
-      const dbRoles = await db
-        .select({ code: roles.code })
-        .from(userRoles)
-        .innerJoin(roles, eq(userRoles.roleId, roles.id))
-        .where(
-          and(
-            eq(userRoles.userId, user.id),
-            eq(userRoles.tenantId, resolvedTenantId),
-            isNull(userRoles.revokedAt),
-            isNull(roles.deletedAt)
-          )
-        );
-      userRolesList = dbRoles.map((r) => r.code);
+    // 5. Cargar Roles y Permisos (globales o del Tenant)
+    const dbRoles = await db
+      .select({ code: roles.code })
+      .from(userRoles)
+      .innerJoin(roles, eq(userRoles.roleId, roles.id))
+      .where(
+        and(
+          eq(userRoles.userId, user.id),
+          resolvedTenantId ? eq(userRoles.tenantId, resolvedTenantId) : isNull(userRoles.tenantId),
+          isNull(userRoles.revokedAt),
+          isNull(roles.deletedAt)
+        )
+      );
+    userRolesList = dbRoles.map((r) => r.code);
 
-      const dbPermissions = await db
-        .select({ code: permissions.code })
-        .from(userRoles)
-        .innerJoin(roles, eq(userRoles.roleId, roles.id))
-        .innerJoin(rolePermissions, eq(rolePermissions.roleId, roles.id))
-        .innerJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
-        .where(
-          and(
-            eq(userRoles.userId, user.id),
-            eq(userRoles.tenantId, resolvedTenantId),
-            isNull(userRoles.revokedAt),
-            isNull(roles.deletedAt)
-          )
-        );
-      userPermissionsList = Array.from(new Set(dbPermissions.map((p) => p.code)));
-    }
+    const dbPermissions = await db
+      .select({ code: permissions.code })
+      .from(userRoles)
+      .innerJoin(roles, eq(userRoles.roleId, roles.id))
+      .innerJoin(rolePermissions, eq(rolePermissions.roleId, roles.id))
+      .innerJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
+      .where(
+        and(
+          eq(userRoles.userId, user.id),
+          resolvedTenantId ? eq(userRoles.tenantId, resolvedTenantId) : isNull(userRoles.tenantId),
+          isNull(userRoles.revokedAt),
+          isNull(roles.deletedAt)
+        )
+      );
+    userPermissionsList = Array.from(new Set(dbPermissions.map((p) => p.code)));
 
     // 6. Crear Registro de Sesión
     const sessionExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 días
@@ -261,37 +260,36 @@ export class AuthService {
     let userRolesList: string[] = [];
     let userPermissionsList: string[] = [];
 
-    if (session.tenantId) {
-      const dbRoles = await db
-        .select({ code: roles.code })
-        .from(userRoles)
-        .innerJoin(roles, eq(userRoles.roleId, roles.id))
-        .where(
-          and(
-            eq(userRoles.userId, user.id),
-            eq(userRoles.tenantId, session.tenantId),
-            isNull(userRoles.revokedAt),
-            isNull(roles.deletedAt)
-          )
-        );
-      userRolesList = dbRoles.map((r) => r.code);
+    // 9. Recargar Roles y Permisos vigentes (globales o del Tenant)
+    const dbRoles = await db
+      .select({ code: roles.code })
+      .from(userRoles)
+      .innerJoin(roles, eq(userRoles.roleId, roles.id))
+      .where(
+        and(
+          eq(userRoles.userId, user.id),
+          session.tenantId ? eq(userRoles.tenantId, session.tenantId) : isNull(userRoles.tenantId),
+          isNull(userRoles.revokedAt),
+          isNull(roles.deletedAt)
+        )
+      );
+    userRolesList = dbRoles.map((r) => r.code);
 
-      const dbPermissions = await db
-        .select({ code: permissions.code })
-        .from(userRoles)
-        .innerJoin(roles, eq(userRoles.roleId, roles.id))
-        .innerJoin(rolePermissions, eq(rolePermissions.roleId, roles.id))
-        .innerJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
-        .where(
-          and(
-            eq(userRoles.userId, user.id),
-            eq(userRoles.tenantId, session.tenantId),
-            isNull(userRoles.revokedAt),
-            isNull(roles.deletedAt)
-          )
-        );
-      userPermissionsList = Array.from(new Set(dbPermissions.map((p) => p.code)));
-    }
+    const dbPermissions = await db
+      .select({ code: permissions.code })
+      .from(userRoles)
+      .innerJoin(roles, eq(userRoles.roleId, roles.id))
+      .innerJoin(rolePermissions, eq(rolePermissions.roleId, roles.id))
+      .innerJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
+      .where(
+        and(
+          eq(userRoles.userId, user.id),
+          session.tenantId ? eq(userRoles.tenantId, session.tenantId) : isNull(userRoles.tenantId),
+          isNull(userRoles.revokedAt),
+          isNull(roles.deletedAt)
+        )
+      );
+    userPermissionsList = Array.from(new Set(dbPermissions.map((p) => p.code)));
 
     // 10. Firmar nuevos tokens
     const accessToken = await this.signAccessToken({

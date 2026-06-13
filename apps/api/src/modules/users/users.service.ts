@@ -11,18 +11,18 @@ export class UsersService {
     return sanitized;
   }
 
-  async getUserById(id: string) {
-    const user = await this.repository.findById(id);
+  async getUserById(id: string, tenantId: string | null) {
+    const user = await this.repository.findById(id, tenantId);
     if (!user) {
       throw new NotFoundError(`Usuario con ID '${id}' no encontrado.`);
     }
     return this.sanitizeUser(user);
   }
 
-  async getUsers(page: number, pageSize: number) {
+  async getUsers(tenantId: string | null, page: number, pageSize: number) {
     const [users, totalItems] = await Promise.all([
-      this.repository.findMany(page, pageSize),
-      this.repository.count(),
+      this.repository.findMany(tenantId, page, pageSize),
+      this.repository.count(tenantId),
     ]);
 
     return {
@@ -37,7 +37,6 @@ export class UsersService {
       throw new ConflictError(`El correo electrónico '${data.email}' ya está registrado.`);
     }
 
-    // Hashear la contraseña usando la API de seguridad nativa de Bun
     const passwordHash = await Bun.password.hash(data.password, {
       algorithm: "argon2id",
       memoryCost: 65536,
@@ -52,17 +51,17 @@ export class UsersService {
     return this.sanitizeUser(user);
   }
 
-  async updateUser(id: string, data: UpdateUserInput) {
-    await this.getUserById(id); // Valida que exista
+  async updateUser(id: string, tenantId: string | null, data: UpdateUserInput) {
+    await this.getUserById(id, tenantId); // Valida que exista en el contexto del tenant
 
-    const user = await this.repository.update(id, data);
+    const user = await this.repository.update(id, tenantId, data);
     return this.sanitizeUser(user);
   }
 
-  async deleteUser(id: string) {
-    await this.getUserById(id); // Valida que exista
+  async deleteUser(id: string, tenantId: string | null) {
+    await this.getUserById(id, tenantId); // Valida que exista en el contexto del tenant
 
-    const user = await this.repository.delete(id);
+    const user = await this.repository.delete(id, tenantId);
     return this.sanitizeUser(user);
   }
 }

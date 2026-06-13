@@ -1,14 +1,44 @@
 import { db } from "../../database/db";
-import { platformUsers } from "../../database/schema";
+import { platformUsers, tenantUsers } from "../../database/schema";
 import { eq, and, isNull, sql } from "drizzle-orm";
 import type { CreateUserInput, UpdateUserInput } from "./users.schema";
 
 export class UsersRepository {
-  async findById(id: string) {
+  async findById(id: string, tenantId: string | null) {
+    if (!tenantId) {
+      const results = await db
+        .select()
+        .from(platformUsers)
+        .where(and(eq(platformUsers.id, id), isNull(platformUsers.deletedAt)))
+        .limit(1);
+      return results[0] || null;
+    }
+
     const results = await db
-      .select()
+      .select({
+        id: platformUsers.id,
+        email: platformUsers.email,
+        firstName: platformUsers.firstName,
+        lastName: platformUsers.lastName,
+        displayName: platformUsers.displayName,
+        phone: platformUsers.phone,
+        status: platformUsers.status,
+        locale: platformUsers.locale,
+        timezone: platformUsers.timezone,
+        emailVerifiedAt: platformUsers.emailVerifiedAt,
+        createdAt: platformUsers.createdAt,
+        updatedAt: platformUsers.updatedAt,
+      })
       .from(platformUsers)
-      .where(and(eq(platformUsers.id, id), isNull(platformUsers.deletedAt)))
+      .innerJoin(tenantUsers, eq(tenantUsers.userId, platformUsers.id))
+      .where(
+        and(
+          eq(platformUsers.id, id),
+          eq(tenantUsers.tenantId, tenantId),
+          isNull(tenantUsers.deletedAt),
+          isNull(platformUsers.deletedAt)
+        )
+      )
       .limit(1);
     return results[0] || null;
   }
@@ -22,22 +52,70 @@ export class UsersRepository {
     return results[0] || null;
   }
 
-  async findMany(page: number, pageSize: number) {
+  async findMany(tenantId: string | null, page: number, pageSize: number) {
     const offset = (page - 1) * pageSize;
-    return await db
-      .select()
+
+    if (!tenantId) {
+      return await db
+        .select()
+        .from(platformUsers)
+        .where(isNull(platformUsers.deletedAt))
+        .limit(pageSize)
+        .offset(offset)
+        .orderBy(sql`${platformUsers.createdAt} desc`);
+    }
+
+    const results = await db
+      .select({
+        id: platformUsers.id,
+        email: platformUsers.email,
+        firstName: platformUsers.firstName,
+        lastName: platformUsers.lastName,
+        displayName: platformUsers.displayName,
+        phone: platformUsers.phone,
+        status: platformUsers.status,
+        locale: platformUsers.locale,
+        timezone: platformUsers.timezone,
+        emailVerifiedAt: platformUsers.emailVerifiedAt,
+        createdAt: platformUsers.createdAt,
+        updatedAt: platformUsers.updatedAt,
+      })
       .from(platformUsers)
-      .where(isNull(platformUsers.deletedAt))
+      .innerJoin(tenantUsers, eq(tenantUsers.userId, platformUsers.id))
+      .where(
+        and(
+          eq(tenantUsers.tenantId, tenantId),
+          isNull(tenantUsers.deletedAt),
+          isNull(platformUsers.deletedAt)
+        )
+      )
       .limit(pageSize)
       .offset(offset)
       .orderBy(sql`${platformUsers.createdAt} desc`);
+
+    return results;
   }
 
-  async count() {
+  async count(tenantId: string | null) {
+    if (!tenantId) {
+      const result = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(platformUsers)
+        .where(isNull(platformUsers.deletedAt));
+      return Number(result[0]?.count || 0);
+    }
+
     const result = await db
       .select({ count: sql<number>`count(*)` })
       .from(platformUsers)
-      .where(isNull(platformUsers.deletedAt));
+      .innerJoin(tenantUsers, eq(tenantUsers.userId, platformUsers.id))
+      .where(
+        and(
+          eq(tenantUsers.tenantId, tenantId),
+          isNull(tenantUsers.deletedAt),
+          isNull(platformUsers.deletedAt)
+        )
+      );
     return Number(result[0]?.count || 0);
   }
 
@@ -58,7 +136,10 @@ export class UsersRepository {
     return results[0];
   }
 
-  async update(id: string, data: UpdateUserInput) {
+  async update(id: string, tenantId: string | null, data: UpdateUserInput) {
+    const existing = await this.findById(id, tenantId);
+    if (!existing) return null;
+
     const updateData: any = { ...data };
     updateData.updatedAt = new Date();
 
@@ -70,7 +151,10 @@ export class UsersRepository {
     return results[0] || null;
   }
 
-  async delete(id: string) {
+  async delete(id: string, tenantId: string | null) {
+    const existing = await this.findById(id, tenantId);
+    if (!existing) return null;
+
     const results = await db
       .update(platformUsers)
       .set({
