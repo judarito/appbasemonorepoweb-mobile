@@ -10,6 +10,8 @@ import { sql } from "drizzle-orm";
 import { openapiSpec } from "./common/openapi";
 import { usersRoutes } from "./modules/users/users.routes";
 import { authRoutes } from "./modules/auth/auth.routes";
+import { rolesRoutes } from "./modules/roles/roles.routes";
+import { meRoutes } from "./modules/me/me.routes";
 
 const app = new Hono<{ Variables: { traceId: string } }>();
 
@@ -17,7 +19,7 @@ const app = new Hono<{ Variables: { traceId: string } }>();
 app.use("*", cors({
   origin: "*",
   allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-  allowHeaders: ["Content-Type", "Authorization", "x-trace-id"],
+  allowHeaders: ["Content-Type", "Authorization", "x-trace-id", "x-tenant-id"],
   exposeHeaders: ["x-trace-id"],
 }));
 app.use("*", traceMiddleware());
@@ -95,6 +97,8 @@ v1.get("/", (c) => {
 // Registrar rutas de módulos
 v1.route("/auth", authRoutes);
 v1.route("/users", usersRoutes);
+v1.route("/roles", rolesRoutes);
+v1.route("/me", meRoutes);
 
 app.route("/api/v1", v1);
 
