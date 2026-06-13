@@ -477,5 +477,23 @@ export class SuperadminController {
       traceId: c.get("traceId" as any),
     });
   };
+
+  getAuditLogs = async (c: Context) => {
+    const page = Number(c.req.query("page") || 1);
+    const pageSize = Number(c.req.query("pageSize") || 10);
+    const result = await this.service.getAuditLogs(page, pageSize);
+
+    return c.json({
+      success: true,
+      data: result,
+      meta: {
+        page,
+        pageSize,
+        totalItems: result.totalItems,
+        totalPages: Math.ceil(result.totalItems / pageSize),
+      },
+      traceId: c.get("traceId" as any),
+    });
+  };
 }
 

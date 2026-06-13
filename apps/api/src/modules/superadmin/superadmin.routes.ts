@@ -37,5 +37,8 @@ router.delete("/features/:id", controller.deleteFeature);
 router.get("/tenants/:id/features", controller.getTenantFeatures);
 router.post("/tenants/:id/features", controller.saveTenantFeatures);
 
+// --- AUDIT LOGS ---
+router.get("/audit-logs", controller.getAuditLogs);
+
 export { router as superadminRoutes };
 

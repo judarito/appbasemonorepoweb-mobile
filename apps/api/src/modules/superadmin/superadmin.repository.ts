@@ -574,5 +574,32 @@ export class SuperadminRepository {
       }
     });
   }
+
+  async findAuditLogs(page: number, pageSize: number) {
+    const offset = (page - 1) * pageSize;
+    return await db
+      .select({
+        id: auditLogs.id,
+        tenantId: auditLogs.tenantId,
+        actorUserId: auditLogs.actorUserId,
+        actorEmail: platformUsers.email,
+        action: auditLogs.action,
+        entityType: auditLogs.entityType,
+        entityId: auditLogs.entityId,
+        result: auditLogs.result,
+        metadata: auditLogs.metadata,
+        createdAt: auditLogs.occurredAt,
+      })
+      .from(auditLogs)
+      .leftJoin(platformUsers, eq(auditLogs.actorUserId, platformUsers.id))
+      .orderBy(sql`${auditLogs.occurredAt} DESC`)
+      .limit(pageSize)
+      .offset(offset);
+  }
+
+  async countAuditLogs(): Promise<number> {
+    const res = await db.select({ value: count() }).from(auditLogs);
+    return Number(res[0]?.value || 0);
+  }
 }
 

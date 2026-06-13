@@ -463,5 +463,13 @@ export class SuperadminService {
       traceId,
     });
   }
+
+  async getAuditLogs(page: number, pageSize: number) {
+    const [items, totalItems] = await Promise.all([
+      this.repository.findAuditLogs(page, pageSize),
+      this.repository.countAuditLogs(),
+    ]);
+    return { items, totalItems };
+  }
 }
 
