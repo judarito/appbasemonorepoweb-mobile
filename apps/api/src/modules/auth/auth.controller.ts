@@ -88,9 +88,10 @@ export class AuthController {
   logout = async (c: Context) => {
     // El middleware de autenticación requireAuth ya habrá inyectado el sessionId en el context
     const session = c.get("session" as any);
+    const user = c.get("user" as any);
     
     if (session && session.id) {
-      await this.service.logout(session.id);
+      await this.service.logout(session.id, user?.id);
     }
 
     deleteCookie(c, "refresh_token");

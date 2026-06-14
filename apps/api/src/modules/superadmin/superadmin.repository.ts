@@ -16,8 +16,9 @@ import {
   tenantUsage,
   auditLogs
 } from "../../database/schema";
-import { eq, and, isNull, sql, or, ilike, count } from "drizzle-orm";
+import { eq, and, isNull, sql, or, ilike, count, gte, lte } from "drizzle-orm";
 import type { CreateTenantInput, UpdateTenantInput } from "./superadmin.schema";
+import { auditService } from "../../common/audit.service";
 
 export class SuperadminRepository {
   async findTenants(page: number, pageSize: number, search?: string, status?: string, planId?: string) {
@@ -365,7 +366,8 @@ export class SuperadminRepository {
     metadata?: any;
     traceId?: string;
   }) {
-    await db.insert(auditLogs).values({
+    // Delegar al servicio centralizado con enmascarado automático
+    await auditService.logSync({
       tenantId: data.tenantId,
       actorUserId: data.actorUserId,
       sessionId: data.sessionId,
@@ -373,8 +375,8 @@ export class SuperadminRepository {
       entityType: data.entityType,
       entityId: data.entityId,
       result: data.result,
-      metadata: data.metadata || {},
-      traceId: data.traceId ? data.traceId : null,
+      metadata: data.metadata,
+      traceId: data.traceId,
     });
   }
 
@@ -575,8 +577,36 @@ export class SuperadminRepository {
     });
   }
 
-  async findAuditLogs(page: number, pageSize: number) {
+  async findAuditLogs(
+    page: number,
+    pageSize: number,
+    filters: {
+      tenantId?: string;
+      action?: string;
+      result?: string;
+      dateFrom?: string;
+      dateTo?: string;
+    } = {}
+  ) {
     const offset = (page - 1) * pageSize;
+    const conditions: any[] = [];
+
+    if (filters.tenantId) {
+      conditions.push(eq(auditLogs.tenantId, filters.tenantId));
+    }
+    if (filters.action) {
+      conditions.push(ilike(auditLogs.action, `%${filters.action}%`));
+    }
+    if (filters.result) {
+      conditions.push(eq(auditLogs.result, filters.result));
+    }
+    if (filters.dateFrom) {
+      conditions.push(gte(auditLogs.occurredAt, new Date(filters.dateFrom)));
+    }
+    if (filters.dateTo) {
+      conditions.push(lte(auditLogs.occurredAt, new Date(filters.dateTo)));
+    }
+
     return await db
       .select({
         id: auditLogs.id,
@@ -587,18 +617,40 @@ export class SuperadminRepository {
         entityType: auditLogs.entityType,
         entityId: auditLogs.entityId,
         result: auditLogs.result,
+        ipAddress: auditLogs.ipAddress,
+        userAgent: auditLogs.userAgent,
         metadata: auditLogs.metadata,
         createdAt: auditLogs.occurredAt,
       })
       .from(auditLogs)
       .leftJoin(platformUsers, eq(auditLogs.actorUserId, platformUsers.id))
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
       .orderBy(sql`${auditLogs.occurredAt} DESC`)
       .limit(pageSize)
       .offset(offset);
   }
 
-  async countAuditLogs(): Promise<number> {
-    const res = await db.select({ value: count() }).from(auditLogs);
+  async countAuditLogs(
+    filters: {
+      tenantId?: string;
+      action?: string;
+      result?: string;
+      dateFrom?: string;
+      dateTo?: string;
+    } = {}
+  ): Promise<number> {
+    const conditions: any[] = [];
+
+    if (filters.tenantId) conditions.push(eq(auditLogs.tenantId, filters.tenantId));
+    if (filters.action) conditions.push(ilike(auditLogs.action, `%${filters.action}%`));
+    if (filters.result) conditions.push(eq(auditLogs.result, filters.result));
+    if (filters.dateFrom) conditions.push(gte(auditLogs.occurredAt, new Date(filters.dateFrom)));
+    if (filters.dateTo) conditions.push(lte(auditLogs.occurredAt, new Date(filters.dateTo)));
+
+    const res = await db
+      .select({ value: count() })
+      .from(auditLogs)
+      .where(conditions.length > 0 ? and(...conditions) : undefined);
     return Number(res[0]?.value || 0);
   }
 }

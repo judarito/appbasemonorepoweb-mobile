@@ -1,6 +1,7 @@
 import { UsersRepository } from "./users.repository";
 import type { CreateUserInput, UpdateUserInput } from "./users.schema";
 import { ConflictError, NotFoundError, ForbiddenError } from "../../common/errors";
+import { auditService } from "../../common/audit.service";
 import { db } from "../../database/db";
 import { roles, userRoles } from "../../database/schema";
 import { eq, and, isNull } from "drizzle-orm";
@@ -126,7 +127,16 @@ export class UsersService {
         roleId: targetRoleId,
         defaultRoleId: targetRoleId,
       });
-      return this.sanitizeUser(user);
+      const sanitized = this.sanitizeUser(user);
+      auditService.log({
+        tenantId,
+        action: "USER_CREATE",
+        entityType: "USER",
+        entityId: user?.id,
+        result: "SUCCESS",
+        afterData: sanitized,
+      });
+      return sanitized;
     } catch (err: any) {
       if (err.message === "MEMBER_ALREADY_EXISTS") {
         throw new ConflictError(`El usuario ya es miembro activo de este inquilino.`);
@@ -135,10 +145,21 @@ export class UsersService {
     }
   }
 
-  async updateUser(id: string, tenantId: string | null, data: UpdateUserInput) {
-    await this.getUserById(id, tenantId); // Valida existencia
+  async updateUser(id: string, tenantId: string | null, data: UpdateUserInput, actorUserId?: string) {
+    const before = await this.getUserById(id, tenantId);
     const user = await this.repository.update(id, tenantId, data);
-    return this.sanitizeUser(user);
+    const sanitized = this.sanitizeUser(user);
+    auditService.log({
+      tenantId,
+      actorUserId: actorUserId ?? null,
+      action: "USER_UPDATE",
+      entityType: "USER",
+      entityId: id,
+      result: "SUCCESS",
+      beforeData: before,
+      afterData: sanitized,
+    });
+    return sanitized;
   }
 
   async deleteUser(id: string, tenantId: string | null) {
@@ -173,7 +194,16 @@ export class UsersService {
     }
 
     const deleted = await this.repository.delete(id, tenantId);
-    return this.sanitizeUser(deleted);
+    const sanitized = this.sanitizeUser(deleted);
+    auditService.log({
+      tenantId,
+      action: "USER_DELETE",
+      entityType: "USER",
+      entityId: id,
+      result: "SUCCESS",
+      beforeData: { id },
+    });
+    return sanitized;
   }
 
   async updateStatus(id: string, tenantId: string | null, status: "ACTIVE" | "DISABLED", actorUserId: string) {

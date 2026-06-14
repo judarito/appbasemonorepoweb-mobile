@@ -178,6 +178,7 @@ function SuperadminLayout() {
     { path: "/superadmin/plans", label: "Planes", icon: <Layers size={18} /> },
     { path: "/superadmin/features", label: "Características", icon: <Settings size={18} /> },
     { path: "/superadmin/settings", label: "Configuración", icon: <SlidersHorizontal size={18} /> },
+    { path: "/superadmin/audit", label: "Auditoría", icon: <History size={18} /> },
   ];
 
   return (
@@ -225,10 +226,184 @@ function SuperadminLayout() {
             <Route path="plans" element={<PlansView />} />
             <Route path="features" element={<FeaturesView />} />
             <Route path="settings" element={<SettingsView />} />
+            <Route path="audit" element={<AuditLogsView />} />
             <Route path="*" element={<Navigate to="dashboard" replace />} />
           </Routes>
         </main>
       </div>
+    </div>
+  );
+}
+
+// --- VISTA 6: AUDITORÍA ---
+function AuditLogsView() {
+  const [logs, setLogs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+
+  const [filterAction, setFilterAction] = useState("");
+  const [filterResult, setFilterResult] = useState("");
+  const [filterDateFrom, setFilterDateFrom] = useState("");
+  const [filterDateTo, setFilterDateTo] = useState("");
+
+  const PAGE_SIZE = 20;
+
+  const fetchLogs = async (currentPage = 1) => {
+    setLoading(true);
+    try {
+      const res = await api.get<{ items: any[]; totalItems: number }>("/superadmin/audit-logs", {
+        params: {
+          page: currentPage,
+          pageSize: PAGE_SIZE,
+          ...(filterAction && { action: filterAction }),
+          ...(filterResult && { result: filterResult }),
+          ...(filterDateFrom && { dateFrom: filterDateFrom }),
+          ...(filterDateTo && { dateTo: filterDateTo }),
+        },
+      });
+      setLogs(res.items);
+      setTotalItems(res.totalItems);
+      setTotalPages(Math.ceil(res.totalItems / PAGE_SIZE));
+    } catch (err: any) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLogs(page);
+  }, [page]);
+
+  const handleSearch = () => {
+    setPage(1);
+    fetchLogs(1);
+  };
+
+  const handleReset = () => {
+    setFilterAction("");
+    setFilterResult("");
+    setFilterDateFrom("");
+    setFilterDateTo("");
+    setPage(1);
+    setTimeout(() => fetchLogs(1), 50);
+  };
+
+  const resultBadge = (result: string) => {
+    const config: Record<string, { cls: string; label: string }> = {
+      SUCCESS: { cls: "badge-success", label: "SUCCESS" },
+      FAILURE: { cls: "badge-danger", label: "FAILURE" },
+      DENIED: { cls: "badge-warning", label: "DENIED" },
+    };
+    const c = config[result] || { cls: "badge-muted", label: result };
+    return <span className={`audit-badge ${c.cls}`}>{c.label}</span>;
+  };
+
+  const formatDate = (dateStr: string) =>
+    dateStr ? new Date(dateStr).toLocaleString("es-CO", { dateStyle: "short", timeStyle: "short" }) : "—";
+
+  return (
+    <div className="view-container">
+      <div className="view-header">
+        <div>
+          <h1 className="view-title">Bitácora de Auditoría</h1>
+          <p className="view-subtitle">{totalItems.toLocaleString()} registros encontrados</p>
+        </div>
+      </div>
+
+      {/* Barra de Filtros */}
+      <div className="audit-filters">
+        <input
+          type="text"
+          placeholder="Filtrar por acción (ej. AUTH_LOGIN)"
+          value={filterAction}
+          onChange={(e) => setFilterAction(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+          className="filter-input"
+        />
+        <select
+          value={filterResult}
+          onChange={(e) => setFilterResult(e.target.value)}
+          className="filter-select"
+        >
+          <option value="">Todos los resultados</option>
+          <option value="SUCCESS">SUCCESS</option>
+          <option value="FAILURE">FAILURE</option>
+          <option value="DENIED">DENIED</option>
+        </select>
+        <input
+          type="date"
+          value={filterDateFrom}
+          onChange={(e) => setFilterDateFrom(e.target.value)}
+          className="filter-input date-input"
+          title="Desde"
+        />
+        <input
+          type="date"
+          value={filterDateTo}
+          onChange={(e) => setFilterDateTo(e.target.value)}
+          className="filter-input date-input"
+          title="Hasta"
+        />
+        <button onClick={handleSearch} className="btn btn-primary btn-sm">
+          Buscar
+        </button>
+        <button onClick={handleReset} className="btn btn-secondary btn-sm">
+          Limpiar
+        </button>
+      </div>
+
+      {/* Tabla */}
+      <div className="table-container">
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Acción</th>
+              <th>Resultado</th>
+              <th>Actor</th>
+              <th>Entidad</th>
+              <th>IP</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr><td colSpan={6} style={{ textAlign: "center", padding: "2rem" }}>
+                <div className="loading-spinner" style={{ margin: "0 auto" }} />
+              </td></tr>
+            ) : logs.length === 0 ? (
+              <tr><td colSpan={6} className="empty-row">No hay registros de auditoría.</td></tr>
+            ) : logs.map((log) => (
+              <tr key={log.id}>
+                <td style={{ whiteSpace: "nowrap", fontSize: "0.8rem" }}>{formatDate(log.createdAt)}</td>
+                <td><code className="audit-action">{log.action}</code></td>
+                <td>{resultBadge(log.result)}</td>
+                <td style={{ fontSize: "0.82rem" }}>{log.actorEmail || log.actorUserId?.slice(0, 8) || "—"}</td>
+                <td style={{ fontSize: "0.8rem" }}>
+                  <span>{log.entityType}</span>
+                  {log.entityId && <span className="text-muted"> · {log.entityId.slice(0, 8)}…</span>}
+                </td>
+                <td style={{ fontSize: "0.78rem" }}>{log.ipAddress || "—"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Paginación */}
+      {totalPages > 1 && (
+        <div className="pagination">
+          <button className="btn btn-secondary btn-sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
+            ← Anterior
+          </button>
+          <span className="page-indicator">Página {page} de {totalPages}</span>
+          <button className="btn btn-secondary btn-sm" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>
+            Siguiente →
+          </button>
+        </div>
+      )}
     </div>
   );
 }

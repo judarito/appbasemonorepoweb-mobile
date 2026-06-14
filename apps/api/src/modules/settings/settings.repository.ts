@@ -1,6 +1,7 @@
 import { db } from "../../database/db";
-import { tenantSettings, auditLogs } from "../../database/schema";
+import { tenantSettings } from "../../database/schema";
 import { eq, and } from "drizzle-orm";
+import { auditService } from "../../common/audit.service";
 
 export class SettingsRepository {
   async findSettingsByTenant(tenantId: string) {
@@ -69,16 +70,16 @@ export class SettingsRepository {
     afterData?: any;
     metadata?: any;
   }) {
-    await db.insert(auditLogs).values({
+    await auditService.logSync({
       tenantId: data.tenantId,
       actorUserId: data.actorUserId,
       action: data.action,
       entityType: data.entityType,
       entityId: data.entityId,
       result: data.result,
-      beforeData: data.beforeData || null,
-      afterData: data.afterData || null,
-      metadata: data.metadata || {},
+      beforeData: data.beforeData,
+      afterData: data.afterData,
+      metadata: data.metadata,
     });
   }
 }

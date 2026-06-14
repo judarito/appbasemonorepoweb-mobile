@@ -480,8 +480,17 @@ export class SuperadminController {
 
   getAuditLogs = async (c: Context) => {
     const page = Number(c.req.query("page") || 1);
-    const pageSize = Number(c.req.query("pageSize") || 10);
-    const result = await this.service.getAuditLogs(page, pageSize);
+    const pageSize = Number(c.req.query("pageSize") || 20);
+
+    const filters = {
+      tenantId: c.req.query("tenantId") || undefined,
+      action: c.req.query("action") || undefined,
+      result: c.req.query("result") || undefined,
+      dateFrom: c.req.query("dateFrom") || undefined,
+      dateTo: c.req.query("dateTo") || undefined,
+    };
+
+    const result = await this.service.getAuditLogs(page, pageSize, filters);
 
     return c.json({
       success: true,
@@ -491,6 +500,7 @@ export class SuperadminController {
         pageSize,
         totalItems: result.totalItems,
         totalPages: Math.ceil(result.totalItems / pageSize),
+        filters,
       },
       traceId: c.get("traceId" as any),
     });

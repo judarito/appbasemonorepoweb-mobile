@@ -1,6 +1,7 @@
 import { RolesRepository } from "./roles.repository";
 import type { CreateRoleInput, UpdateRoleInput } from "./roles.schema";
 import { ConflictError, NotFoundError, ForbiddenError } from "../../common/errors";
+import { auditService } from "../../common/audit.service";
 
 export class RolesService {
   private repository = new RolesRepository();
@@ -30,7 +31,7 @@ export class RolesService {
     };
   }
 
-  async createRole(tenantId: string | null, data: CreateRoleInput) {
+  async createRole(tenantId: string | null, data: CreateRoleInput, actorUserId?: string) {
     const existing = await this.repository.findByCode(data.code, tenantId);
     if (existing) {
       throw new ConflictError(`El código de rol '${data.code.toUpperCase()}' ya está registrado.`);
@@ -41,10 +42,20 @@ export class RolesService {
       tenantId,
     });
 
+    auditService.log({
+      tenantId,
+      actorUserId: actorUserId ?? null,
+      action: "ROLE_CREATE",
+      entityType: "ROLE",
+      entityId: role.id,
+      result: "SUCCESS",
+      afterData: { code: data.code, name: data.name },
+    });
+
     return await this.getRole(role.id, tenantId);
   }
 
-  async updateRole(id: string, tenantId: string | null, data: UpdateRoleInput) {
+  async updateRole(id: string, tenantId: string | null, data: UpdateRoleInput, actorUserId?: string) {
     const existing = await this.repository.findById(id, tenantId);
     if (!existing) {
       throw new NotFoundError(`Rol con ID '${id}' no encontrado.`);
@@ -55,10 +66,22 @@ export class RolesService {
     }
 
     await this.repository.update(id, tenantId, data);
+
+    auditService.log({
+      tenantId,
+      actorUserId: actorUserId ?? null,
+      action: "ROLE_UPDATE",
+      entityType: "ROLE",
+      entityId: id,
+      result: "SUCCESS",
+      beforeData: { name: existing.name, description: existing.description },
+      afterData: { name: data.name, description: data.description },
+    });
+
     return await this.getRole(id, tenantId);
   }
 
-  async deleteRole(id: string, tenantId: string | null) {
+  async deleteRole(id: string, tenantId: string | null, actorUserId?: string) {
     const existing = await this.repository.findById(id, tenantId);
     if (!existing) {
       throw new NotFoundError(`Rol con ID '${id}' no encontrado.`);
@@ -69,6 +92,17 @@ export class RolesService {
     }
 
     const deletedRole = await this.repository.delete(id, tenantId);
+
+    auditService.log({
+      tenantId,
+      actorUserId: actorUserId ?? null,
+      action: "ROLE_DELETE",
+      entityType: "ROLE",
+      entityId: id,
+      result: "SUCCESS",
+      beforeData: { code: existing.code, name: existing.name },
+    });
+
     return deletedRole;
   }
 }

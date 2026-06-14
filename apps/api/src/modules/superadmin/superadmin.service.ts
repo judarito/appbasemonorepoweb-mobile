@@ -464,10 +464,14 @@ export class SuperadminService {
     });
   }
 
-  async getAuditLogs(page: number, pageSize: number) {
+  async getAuditLogs(
+    page: number,
+    pageSize: number,
+    filters: { tenantId?: string; action?: string; result?: string; dateFrom?: string; dateTo?: string } = {}
+  ) {
     const [items, totalItems] = await Promise.all([
-      this.repository.findAuditLogs(page, pageSize),
-      this.repository.countAuditLogs(),
+      this.repository.findAuditLogs(page, pageSize, filters),
+      this.repository.countAuditLogs(filters),
     ]);
     return { items, totalItems };
   }

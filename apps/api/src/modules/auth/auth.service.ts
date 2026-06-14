@@ -4,6 +4,7 @@ import { eq, and, isNull, sql } from "drizzle-orm";
 import { sign, verify } from "hono/jwt";
 import { env } from "../../config/env";
 import { UnauthorizedError, NotFoundError, ConflictError } from "../../common/errors";
+import { auditService } from "../../common/audit.service";
 import type { LoginInput } from "./auth.schema";
 
 export interface TokenPayload {
@@ -42,6 +43,19 @@ export class AuthService {
       await db.update(platformUsers).set({
         failedLoginAttempts: user.failedLoginAttempts + 1
       }).where(eq(platformUsers.id, user.id));
+
+      // Registrar intento fallido de login
+      auditService.log({
+        tenantId: null,
+        actorUserId: user.id,
+        action: "AUTH_LOGIN_FAILED",
+        entityType: "USER_SESSION",
+        entityId: user.id,
+        result: "FAILURE",
+        ipAddress: data.ipAddress,
+        userAgent: data.userAgent,
+        metadata: { email: user.email, reason: "INVALID_PASSWORD", attempts: user.failedLoginAttempts + 1 },
+      });
 
       throw new UnauthorizedError("Credenciales incorrectas.");
     }
@@ -164,6 +178,20 @@ export class AuthService {
 
     const refreshTokenJwt = await this.signRefreshToken(dbRefreshToken.id, session.id, familyId, tokenString, dbRefreshToken.expiresAt);
 
+    // Registrar login exitoso
+    auditService.log({
+      tenantId: resolvedTenantId,
+      actorUserId: user.id,
+      sessionId: session.id,
+      action: "AUTH_LOGIN_SUCCESS",
+      entityType: "USER_SESSION",
+      entityId: session.id,
+      result: "SUCCESS",
+      ipAddress: data.ipAddress,
+      userAgent: data.userAgent,
+      metadata: { email: user.email, roles: userRolesList },
+    });
+
     return {
       accessToken,
       refreshToken: refreshTokenJwt,
@@ -199,6 +227,15 @@ export class AuthService {
       // Revocar toda la sesión
       await db.update(userSessions).set({ status: "REVOKED", revokeReason: "REUSE_DETECTED" }).where(eq(userSessions.id, sessionId));
       await db.update(refreshTokens).set({ revokedAt: new Date(), reuseDetectedAt: new Date() }).where(eq(refreshTokens.familyId, familyId));
+
+      // Registrar alerta de seguridad
+      auditService.log({
+        action: "AUTH_TOKEN_REUSE_DETECTED",
+        entityType: "USER_SESSION",
+        entityId: sessionId,
+        result: "DENIED",
+        metadata: { sessionId, familyId, reason: "REFRESH_TOKEN_REUSE" },
+      });
 
       throw new UnauthorizedError("Alerta de seguridad: Token de refresco reutilizado. Sesiones revocadas.");
     }
@@ -317,9 +354,18 @@ export class AuthService {
     };
   }
 
-  async logout(sessionId: string) {
+  async logout(sessionId: string, userId?: string) {
     await db.update(userSessions).set({ status: "REVOKED", revokedAt: new Date(), revokeReason: "LOGOUT" }).where(eq(userSessions.id, sessionId));
     await db.update(refreshTokens).set({ revokedAt: new Date() }).where(eq(refreshTokens.sessionId, sessionId));
+
+    auditService.log({
+      actorUserId: userId ?? null,
+      sessionId,
+      action: "AUTH_LOGOUT",
+      entityType: "USER_SESSION",
+      entityId: sessionId,
+      result: "SUCCESS",
+    });
   }
 
   private async signAccessToken(payload: Omit<TokenPayload, "exp" | "iat">) {
