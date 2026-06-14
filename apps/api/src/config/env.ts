@@ -38,6 +38,9 @@ const envSchema = z.object({
   JWT_ACCESS_SECRET: z.string().min(8, { message: "JWT_ACCESS_SECRET debe tener al menos 8 caracteres." }),
   JWT_REFRESH_SECRET: z.string().min(8, { message: "JWT_REFRESH_SECRET debe tener al menos 8 caracteres." }),
   LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace"]).default("info"),
+  CORS_ORIGIN: z.string().default("http://localhost:5173"),
+  SENTRY_DSN: z.string().optional(),
+  OTLP_ENDPOINT: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

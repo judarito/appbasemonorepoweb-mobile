@@ -141,6 +141,19 @@ v1.route("/files", filesRoutes);
 
 app.route("/api/v1", v1);
 
+// ─── Graceful Shutdown ────────────────────────────────────────────────────
+import { closeDatabase } from "./database/db";
+
+async function shutdown(signal: string) {
+  logger.info({ msg: `Recibida señal ${signal}. Iniciando shutdown graceful...` });
+  await closeDatabase();
+  logger.info({ msg: "Conexiones cerradas. Servidor detenido." });
+  process.exit(0);
+}
+
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));
+
 logger.info(`Servidor HTTP iniciado en http://localhost:${env.PORT}`);
 if (env.NODE_ENV !== "production") {
   logger.info(`Documentación Swagger interactiva disponible en http://localhost:${env.PORT}/docs`);

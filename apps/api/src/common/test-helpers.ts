@@ -1,6 +1,6 @@
 import { db } from "../database/db";
 import { platformUsers, tenants, tenantUsers, userRoles, roles, rolePermissions, permissions } from "../database/schema";
-import { eq, inArray, isNull, sql } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { sign } from "hono/jwt";
 import { env } from "../config/env";
 

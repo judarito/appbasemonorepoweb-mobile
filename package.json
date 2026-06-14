@@ -16,7 +16,10 @@
     "clean": "turbo clean && rm -rf node_modules",
     "db:start": "docker compose up -d",
     "db:stop": "docker compose down",
+    "db:migrate": "bun run database/scripts/migrate.ts",
+    "db:seed": "bun run database/scripts/seed.ts",
     "db:init": "bun run database/scripts/initialize-db.ts",
+    "db:reset": "bun run database/scripts/reset-db.ts",
     "db:studio": "drizzle-kit studio --config=database/drizzle.config.ts",
     "create-app": "bun run scripts/create-app.ts",
     "update-from-template": "bun run scripts/update-from-template.ts"

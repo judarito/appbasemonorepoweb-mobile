@@ -3,7 +3,6 @@ import { env } from "../config/env";
 
 const ALGORITHM = "aes-256-gcm";
 const IV_LENGTH = 12;
-const TAG_LENGTH = 16;
 
 export function encrypt(text: string): string {
   // Generar clave de 32 bytes usando scrypt a partir del JWT secret

@@ -25,6 +25,12 @@ export class ValidationError extends AppError {
   }
 }
 
+export class TooManyRequestsError extends AppError {
+  constructor(message: string = "Demasiadas solicitudes. Intenta de nuevo más tarde.") {
+    super(message, 429, "TOO_MANY_REQUESTS");
+  }
+}
+
 export class NotFoundError extends AppError {
   constructor(message: string = "El recurso solicitado no fue encontrado.") {
     super(message, 404, "NOT_FOUND");
