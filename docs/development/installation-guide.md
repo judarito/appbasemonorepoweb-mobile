@@ -83,6 +83,9 @@ cd apps/web && bun run dev
 
 # Solo mobile
 cd apps/mobile && bun run dev
+
+# Con Docker (API + PostgreSQL)
+docker compose up --build
 ```
 
 ## 8. Verificar instalación
@@ -105,6 +108,8 @@ open http://localhost:3000/docs
 | Puerto 5432 ocupado | Cambiar `DB_PORT` en `.env` y `docker-compose.yml` |
 | Migraciones fallan | Ejecutar `bun run db:reset` para reiniciar la BD |
 | API no responde | Verificar `docker ps` y que PostgreSQL esté corriendo |
+| Conexión DB rechazada | La API reintenta hasta 5 veces con backoff exponencial |
+| 429 Too Many Requests | Rate limiting activo: login 5/15min, forgot-password 3/1h |
 
 ---
 

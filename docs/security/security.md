@@ -60,6 +60,8 @@ Protegido contra abusos:
 - Los refresh tokens se almacenan hasheados en BD
 - Rotación de refresh tokens (cada uso genera uno nuevo)
 - Detección de robo: si un refresh token ya usado se reutiliza, se invalidan todos los de la familia
+- Validación en cada request: usuario activo, tokenVersion coincide, membresía vigente en tenant
+- Sesión expirada → frontend limpia sesión y redirige a /login automáticamente
 
 ---
 
@@ -69,6 +71,15 @@ Ver [Roles y permisos](./roles-permissions.md).
 
 ---
 
+## Rate limiting
+
+| Endpoint | Límite | Ventana |
+|---|---|---|
+| `POST /api/v1/auth/login` | 5 intentos | 15 minutos |
+| `POST /api/v1/auth/forgot-password` | 3 solicitudes | 1 hora |
+
+El middleware retorna headers `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`.
+
 ## Protección contra ataques comunes
 
 | Ataque | Protección |
@@ -76,23 +87,27 @@ Ver [Roles y permisos](./roles-permissions.md).
 | SQL Injection | Drizzle ORM (parametrización automática) |
 | XSS | React (escape automático), Content-Security-Policy |
 | CSRF | SameSite cookies, tokens CSRF en mutaciones |
-| Brute Force | Rate limiting + bloqueo de cuenta |
-| Token Theft | Refresh token rotativo, token version |
-| Tenant Escalation | Validación de membresía en cada request |
+| Brute Force | Rate limiting (5 intentos) + bloqueo de cuenta (15 min) |
+| Token Theft | Refresh token rotativo, token version, validación en cada request |
+| Tenant Escalation | Validación de membresía en middleware de auth + tenant |
 | File Upload | Validación MIME, límite de tamaño, escaneo |
+| Session Hijack | tokenVersion forzada al cambiar contraseña |
 
 ---
 
 ## CORS
 
-Configurado por ambiente:
+Configurado por ambiente mediante variable `CORS_ORIGIN`:
 
-| Ambiente | Origen permitido |
+| Ambiente | Valor |
 |---|---|
 | Local | `http://localhost:5173` |
-| Development | `https://dev.baseforge.app` |
-| Staging | `https://staging.baseforge.app` |
 | Production | `https://app.baseforge.app` |
+
+Los orígenes se configuran en `.env`:
+```
+CORS_ORIGIN=http://localhost:5173,https://app.baseforge.app
+```
 
 ---
 

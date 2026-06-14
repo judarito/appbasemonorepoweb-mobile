@@ -82,7 +82,8 @@ bun run typecheck    # TypeScript
 
 # Base de datos
 bun run db:migrate   # Ejecutar migraciones
-bun run db:seed      # Sembrar datos
+bun run db:seed      # Sembrar datos iniciales
+bun run db:reset     # Reset completo (drop + migrate + seed)
 bun run db:reset     # Resetear BD completa
 bun run db:studio    # Abrir Drizzle Studio
 ```

@@ -50,6 +50,13 @@
 |---|---|---|
 | `CORS_ORIGIN` | Orígenes permitidos separados por coma | `http://localhost:5173` |
 
+### APIs externas (opcional)
+
+| Variable | Descripción |
+|---|---|
+| `SENTRY_DSN` | DSN de Sentry para monitoreo de errores |
+| `OTLP_ENDPOINT` | Endpoint de OpenTelemetry |
+
 ### Correo electrónico
 
 | Variable | Descripción | Default |

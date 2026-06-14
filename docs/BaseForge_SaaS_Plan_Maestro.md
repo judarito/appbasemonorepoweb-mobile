@@ -83,6 +83,7 @@ Al terminar cada sesión de trabajo, actualizar esta tabla:
 | 2026-06-14 | GitHub Copilot | Fase 32 completa (12/15 tareas): script `create-app.ts` con reemplazo de nombres, validación, mobile IDs, .env, schema, commit, docs | BF-3208, BF-3211, BF-3212, BF-3215 pendientes | BF-3208 requiere definir flags; BF-3211/3212 requieren Docker; BF-3215 requiere un clon fresco | Pendientes: módulos opcionales, migración automática, tests post-fork, probar fork real |
 | 2026-06-14 | GitHub Copilot | Fase 33 completa (7/8 tareas): modelo plantilla+paquetes, versionado, changelogs, guía actualización v2, breaking changes policy, script automatizado | BF-3307 pendiente | BF-3307 requiere un clon fresco del repo + un release real para probar merge | Pendientes: probar actualización real de un fork |
 | 2026-06-14 | GitHub Copilot | Fase 34 completa (48/57 tareas): auditoría de todas las funcionalidades, fix de 2 tests, release checklist, changelog v1.0.0 | BF-3419, BF-3421, BF-3434, BF-3437, BF-3438, BF-3443, BF-3453, BF-3455, BF-3456, BF-3457 pendientes | Varios items requieren deploy real, fork real o release publishing | Pendientes: release tag, GitHub Release, backlog v1.1 |
+| 2026-06-14 | GitHub Copilot | Mejoras post-release: pageSize configurable por tenant, resiliencia DB/frontend, dedup requests, CORS por env, rate limiting, brute force protection, graceful shutdown, Dockerfile, db scripts, MetricCard, TelemetryView extraído, tipos fuertes | Ninguna | Ninguno | — |
 
 ---
 

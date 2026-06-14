@@ -26,6 +26,37 @@
 - ✅ Documentación completa (25 documentos)
 - ✅ Bug fix: cache invalidation en feature flags tests
 - ✅ Release checklist creada: `docs/release-v1.0.0.md`
+- ✅ Page size configurable por tenant (setting `pagination.page_size`, default 10)
+- ✅ Cache de settings invalida al actualizar (settingsCache.invalidatePrefix)
+
+### Mejoras de resiliencia
+- ✅ Retry con backoff exponencial en conexión DB (hasta 5 intentos)
+- ✅ Retry con backoff en frontend (solo errores de red/5xx, máx 2 intentos)
+- ✅ Cache de respuestas GET (500ms) para eliminar duplicados por StrictMode
+- ✅ Deduplicación de requests en vuelo para llamadas simultáneas
+- ✅ Graceful shutdown (SIGTERM/SIGINT → closeDatabase)
+- ✅ Rate limiting en auth (login: 5/15min, forgot-password: 3/1h)
+
+### Seguridad
+- ✅ CORS configurable desde env (CORS_ORIGIN)
+- ✅ Protección fuerza bruta con bloqueo tras 5 intentos (15 min)
+- ✅ Auth middleware valida usuario activo + tokenVersion + membresía en cada request
+- ✅ Superadmin impersonation con auditoría obligatoria (SUPERADMIN_IMPERSONATION)
+- ✅ Sesión expirada → logout automático + redirect a login
+- ✅ ErrorDetail type (reemplaza any[] en errores)
+- ✅ TypeScript strict mode activado
+
+### Infraestructura
+- ✅ Dockerfile multi-stage para API
+- ✅ docker-compose con servicio api + postgres
+- ✅ Scripts: db:migrate, db:seed, db:reset
+- ✅ Variables SENTRY_DSN, OTLP_ENDPOINT, CORS_ORIGIN en env schema
+
+### Refactor
+- ✅ MetricCard, ProgressBar, StatusDot como componentes reutilizables
+- ✅ SuperadminTelemetryView extraído a archivo propio
+- ✅ Tipos específicos (ErrorDetail, LocationState, RequestBody)
+- ✅ Constantes extraídas (MIN_PASSWORD_LENGTH, AUTO_REFRESH_INTERVAL_MS, etc.)
 
 ### Fase 33 — Estrategia para actualizar forks
 - ✅ Modelo híbrido plantilla + paquetes
