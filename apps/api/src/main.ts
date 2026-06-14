@@ -14,6 +14,7 @@ import { rolesRoutes } from "./modules/roles/roles.routes";
 import { meRoutes } from "./modules/me/me.routes";
 import { menusRoutes } from "./modules/menus/menus.routes";
 import { superadminRoutes } from "./modules/superadmin/superadmin.routes";
+import { settingsRoutes } from "./modules/settings/settings.routes";
 
 
 
@@ -23,7 +24,7 @@ const app = new Hono<{ Variables: { traceId: string } }>();
 app.use("*", cors({
   origin: "*",
   allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-  allowHeaders: ["Content-Type", "Authorization", "x-trace-id", "x-tenant-id"],
+  allowHeaders: ["Content-Type", "Authorization", "x-trace-id", "x-tenant-id", "x-tenant-code"],
   exposeHeaders: ["x-trace-id"],
 }));
 app.use("*", traceMiddleware());
@@ -105,6 +106,7 @@ v1.route("/roles", rolesRoutes);
 v1.route("/me", meRoutes);
 v1.route("/menus", menusRoutes);
 v1.route("/superadmin", superadminRoutes);
+v1.route("/settings", settingsRoutes);
 
 
 

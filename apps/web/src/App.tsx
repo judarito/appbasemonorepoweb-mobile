@@ -25,7 +25,14 @@ import {
   X,
   AlertTriangle,
   Check,
-  Globe
+  Globe,
+  Save,
+  SlidersHorizontal,
+  Lock,
+  Palette,
+  MapPin,
+  Bell,
+  Shield
 } from "lucide-react";
 
 // --- MIDDLEWARES Y COMPONENTES DE RUTA ---
@@ -170,6 +177,7 @@ function SuperadminLayout() {
     { path: "/superadmin/tenants", label: "Inquilinos", icon: <Users size={18} /> },
     { path: "/superadmin/plans", label: "Planes", icon: <Layers size={18} /> },
     { path: "/superadmin/features", label: "Características", icon: <Settings size={18} /> },
+    { path: "/superadmin/settings", label: "Configuración", icon: <SlidersHorizontal size={18} /> },
   ];
 
   return (
@@ -216,6 +224,7 @@ function SuperadminLayout() {
             <Route path="tenants" element={<TenantsView />} />
             <Route path="plans" element={<PlansView />} />
             <Route path="features" element={<FeaturesView />} />
+            <Route path="settings" element={<SettingsView />} />
             <Route path="*" element={<Navigate to="dashboard" replace />} />
           </Routes>
         </main>
@@ -1185,6 +1194,248 @@ function FeaturesView() {
   );
 }
 
+// --- VISTA 5: CONFIGURACIÓN POR TENANT ---
+type SettingTab = "general" | "branding" | "localization" | "notifications" | "security" | "email" | "integrations";
+
+interface Setting {
+  key: string;
+  groupName: string;
+  valueType: string;
+  isPublic: boolean;
+  value: any;
+  description: string;
+  isConfigured: boolean;
+}
+
+function SettingsView() {
+  const [activeTab, setActiveTab] = useState<SettingTab>("general");
+  const [settings, setSettings] = useState<Setting[]>([]);
+  const [localValues, setLocalValues] = useState<Record<string, any>>({});
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [successMsg, setSuccessMsg] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
+
+  const tabs: { id: SettingTab; label: string; icon: React.ReactNode }[] = [
+    { id: "general", label: "General", icon: <Globe size={16} /> },
+    { id: "branding", label: "Branding", icon: <Palette size={16} /> },
+    { id: "localization", label: "Localización", icon: <MapPin size={16} /> },
+    { id: "notifications", label: "Notificaciones", icon: <Bell size={16} /> },
+    { id: "security", label: "Seguridad", icon: <Shield size={16} /> },
+    { id: "email", label: "Correo", icon: <Key size={16} /> },
+    { id: "integrations", label: "Integraciones", icon: <Layers size={16} /> },
+  ];
+
+  useEffect(() => {
+    fetchSettings();
+  }, []);
+
+  const fetchSettings = async () => {
+    setLoading(true);
+    try {
+      const data = await api.get<Setting[]>("/settings");
+      setSettings(data);
+      // Inicializar los valores locales
+      const initial: Record<string, any> = {};
+      data.forEach((s: Setting) => {
+        initial[s.key] = s.value;
+      });
+      setLocalValues(initial);
+    } catch (err: any) {
+      setErrorMsg(err.message || "Error al cargar la configuración.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    setSuccessMsg("");
+    setErrorMsg("");
+    try {
+      const settingsToUpdate = Object.entries(localValues).map(([key, value]) => ({
+        key,
+        value,
+      }));
+      await api.put("/settings", { settings: settingsToUpdate });
+      setSuccessMsg("¡Configuración guardada exitosamente!");
+      // Aplicar branding inmediatamente
+      const primaryColor = localValues["branding.primary_color"];
+      if (primaryColor) {
+        document.documentElement.style.setProperty("--color-primary-raw", primaryColor);
+      }
+      setTimeout(() => setSuccessMsg(""), 4000);
+    } catch (err: any) {
+      setErrorMsg(err.message || "Error al guardar la configuración.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const setValue = (key: string, value: any) => {
+    setLocalValues((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const filteredSettings = settings.filter((s) => s.groupName === activeTab);
+
+  const renderField = (setting: Setting) => {
+    const value = localValues[setting.key];
+    const isSecret = setting.valueType === "SECRET_REFERENCE";
+
+    if (setting.valueType === "BOOLEAN") {
+      return (
+        <div className="settings-toggle-row">
+          <span className="settings-toggle-label">{setting.description}</span>
+          <button
+            className={`toggle-slider ${value ? "active" : ""}`}
+            onClick={() => setValue(setting.key, !value)}
+            type="button"
+          >
+            <span className="toggle-knob" />
+          </button>
+        </div>
+      );
+    }
+
+    if (setting.valueType === "NUMBER") {
+      return (
+        <input
+          type="number"
+          value={value ?? ""}
+          onChange={(e) => setValue(setting.key, Number(e.target.value))}
+          className="settings-input"
+          placeholder={setting.description}
+        />
+      );
+    }
+
+    if (setting.key === "branding.primary_color") {
+      return (
+        <div className="settings-color-row">
+          <input
+            type="color"
+            value={value || "#2563EB"}
+            onChange={(e) => setValue(setting.key, e.target.value)}
+            className="settings-color-picker"
+          />
+          <input
+            type="text"
+            value={value || ""}
+            onChange={(e) => setValue(setting.key, e.target.value)}
+            className="settings-input"
+            placeholder="#2563EB"
+            maxLength={20}
+            style={{ flex: 1 }}
+          />
+          <div
+            className="settings-color-preview"
+            style={{ background: value || "#2563EB" }}
+          />
+        </div>
+      );
+    }
+
+    return (
+      <input
+        type={isSecret ? "password" : "text"}
+        value={isSecret && value === "********" ? "" : value ?? ""}
+        onChange={(e) => setValue(setting.key, e.target.value)}
+        className="settings-input"
+        placeholder={isSecret ? "••••••••  (dejar vacío para no cambiar)" : setting.description}
+      />
+    );
+  };
+
+  return (
+    <div className="view-container">
+      <div className="view-header">
+        <div>
+          <h1 className="view-title">Configuración del Tenant</h1>
+          <p className="view-subtitle">Personaliza el comportamiento y apariencia de tu inquilino</p>
+        </div>
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="btn btn-primary"
+        >
+          <Save size={16} />
+          {saving ? "Guardando..." : "Guardar Cambios"}
+        </button>
+      </div>
+
+      {successMsg && (
+        <div className="alert alert-success" style={{ marginBottom: "1rem" }}>
+          <CheckCircle size={16} />
+          <span>{successMsg}</span>
+        </div>
+      )}
+      {errorMsg && (
+        <div className="alert alert-error" style={{ marginBottom: "1rem" }}>
+          <AlertTriangle size={16} />
+          <span>{errorMsg}</span>
+        </div>
+      )}
+
+      <div className="settings-layout">
+        {/* Tabs laterales */}
+        <nav className="settings-tabs">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              className={`settings-tab-btn ${activeTab === tab.id ? "active" : ""}`}
+              onClick={() => setActiveTab(tab.id)}
+            >
+              {tab.icon}
+              <span>{tab.label}</span>
+            </button>
+          ))}
+        </nav>
+
+        {/* Panel de contenido */}
+        <div className="settings-panel">
+          {loading ? (
+            <div className="loading-state">
+              <div className="loading-spinner" />
+              <span>Cargando configuración...</span>
+            </div>
+          ) : filteredSettings.length === 0 ? (
+            <div className="empty-state">
+              <Settings size={40} />
+              <p>No hay configuraciones en esta categoría.</p>
+            </div>
+          ) : (
+            <div className="settings-fields">
+              {filteredSettings.map((setting) => (
+                <div key={setting.key} className="settings-field-row">
+                  <div className="settings-field-meta">
+                    <label className="settings-field-label">
+                      {setting.key.split(".").slice(1).join(".").replace(/_/g, " ")}
+                      {setting.valueType === "SECRET_REFERENCE" && (
+                        <span className="settings-badge-secret">
+                          <Lock size={11} /> secreto
+                        </span>
+                      )}
+                      {setting.isPublic && (
+                        <span className="settings-badge-public">
+                          <Globe size={11} /> público
+                        </span>
+                      )}
+                    </label>
+                    <p className="settings-field-description">{setting.description}</p>
+                  </div>
+                  <div className="settings-field-control">
+                    {renderField(setting)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // --- RUTA PRINCIPAL ---
 function Home() {
   const [theme, setTheme] = useState<"dark" | "light">("dark");
@@ -1194,6 +1445,29 @@ function Home() {
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
   }, [theme]);
+
+  // Branding dinámico: cargar config pública y aplicar color/nombre del tenant
+  useEffect(() => {
+    const applyBranding = async () => {
+      try {
+        const res = await fetch("http://localhost:3000/api/v1/settings/public");
+        if (!res.ok) return;
+        const json = await res.json();
+        const settingsList: any[] = json?.data?.settings || [];
+        const primaryColor = settingsList.find((s: any) => s.key === "branding.primary_color")?.value;
+        const appName = settingsList.find((s: any) => s.key === "general.app_name")?.value;
+        if (primaryColor) {
+          document.documentElement.style.setProperty("--color-primary-raw", primaryColor);
+        }
+        if (appName) {
+          document.title = `${appName} — BaseForge SaaS`;
+        }
+      } catch {
+        // silencioso si la API no está disponible
+      }
+    };
+    applyBranding();
+  }, []);
 
   const toggleTheme = () => {
     setTheme((prev) => (prev === "dark" ? "light" : "dark"));

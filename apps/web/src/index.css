@@ -901,3 +901,305 @@ input:checked + .slider:before {
   background: #fff;
 }
 
+/* =============================================================================
+   SETTINGS VIEW — Configuración por Tenant
+   ============================================================================= */
+
+.settings-layout {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+/* Tabs laterales */
+.settings-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  padding: 0.5rem;
+}
+
+.settings-tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.8rem;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: hsl(var(--muted-foreground));
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  transition: var(--transition-smooth);
+}
+
+.settings-tab-btn:hover {
+  background: hsl(var(--secondary));
+  color: hsl(var(--foreground));
+}
+
+.settings-tab-btn.active {
+  background: hsl(var(--primary) / 0.15);
+  color: hsl(var(--primary));
+  font-weight: 600;
+}
+
+:root[data-theme='light'] .settings-tab-btn.active {
+  background: hsl(var(--primary) / 0.12);
+  color: hsl(var(--primary));
+}
+
+/* Panel de contenido */
+.settings-panel {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  min-height: 400px;
+}
+
+/* Lista de campos */
+.settings-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.settings-field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  align-items: center;
+  padding: 1.1rem 0;
+  border-bottom: 1px solid hsl(var(--border) / 0.5);
+}
+
+.settings-field-row:last-child {
+  border-bottom: none;
+}
+
+.settings-field-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.settings-field-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+  text-transform: capitalize;
+}
+
+.settings-field-description {
+  font-size: 0.78rem;
+  color: hsl(var(--muted-foreground));
+  line-height: 1.4;
+  margin: 0;
+}
+
+.settings-field-control {
+  display: flex;
+  align-items: center;
+}
+
+/* Badges */
+.settings-badge-secret,
+.settings-badge-public {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.68rem;
+  padding: 2px 7px;
+  border-radius: 20px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.settings-badge-secret {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.settings-badge-public {
+  background: rgba(16, 185, 129, 0.12);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+/* Input de configuración */
+.settings-input {
+  width: 100%;
+  padding: 0.55rem 0.9rem;
+  background: hsl(var(--input) / 0.8);
+  border: 1px solid hsl(var(--border));
+  border-radius: 8px;
+  color: hsl(var(--foreground));
+  font-size: 0.875rem;
+  font-family: var(--font-family);
+  transition: var(--transition-smooth);
+}
+
+.settings-input:focus {
+  outline: none;
+  border-color: hsl(var(--primary) / 0.6);
+  box-shadow: 0 0 0 3px hsl(var(--primary) / 0.1);
+}
+
+:root[data-theme='light'] .settings-input {
+  background: #fff;
+}
+
+/* Toggle de booleano */
+.settings-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 1rem;
+}
+
+.settings-toggle-label {
+  font-size: 0.85rem;
+  color: hsl(var(--muted-foreground));
+  flex: 1;
+}
+
+.toggle-slider {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  background: hsl(var(--secondary));
+  border: 1px solid hsl(var(--border));
+  border-radius: 100px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.25s, border-color 0.25s;
+}
+
+.toggle-slider.active {
+  background: hsl(var(--primary));
+  border-color: hsl(var(--primary));
+}
+
+.toggle-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+  transition: left 0.22s cubic-bezier(.4,0,.2,1);
+}
+
+.toggle-slider.active .toggle-knob {
+  left: 22px;
+}
+
+/* Color picker especial */
+.settings-color-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+}
+
+.settings-color-picker {
+  width: 44px;
+  height: 36px;
+  padding: 2px;
+  border-radius: 8px;
+  border: 1px solid hsl(var(--border));
+  background: transparent;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.settings-color-preview {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid hsl(var(--border));
+  flex-shrink: 0;
+}
+
+/* Loading y vacío */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 3rem;
+  color: hsl(var(--muted-foreground));
+  font-size: 0.9rem;
+}
+
+.loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid hsl(var(--border));
+  border-top-color: hsl(var(--primary));
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 3rem;
+  color: hsl(var(--muted-foreground));
+  font-size: 0.9rem;
+}
+
+/* Alert de éxito */
+.alert-success {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius);
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #34d399;
+  font-size: 0.875rem;
+}
+
+/* Responsive settings layout */
+@media (max-width: 768px) {
+  .settings-layout {
+    grid-template-columns: 1fr;
+  }
+  .settings-tabs {
+    flex-direction: row;
+    overflow-x: auto;
+    padding: 0.4rem;
+  }
+  .settings-tab-btn {
+    white-space: nowrap;
+    padding: 0.5rem 0.75rem;
+  }
+  .settings-field-row {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+}
+

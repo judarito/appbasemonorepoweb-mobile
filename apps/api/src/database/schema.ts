@@ -238,6 +238,7 @@ export const tenantSettings = appSchema.table("tenant_settings", {
   isPublic: boolean("is_public").notNull().default(false),
   isEncrypted: boolean("is_encrypted").notNull().default(false),
   description: text("description"),
+  updatedBy: uuid("updated_by").references(() => platformUsers.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
