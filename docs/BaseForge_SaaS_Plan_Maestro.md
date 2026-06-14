@@ -73,6 +73,11 @@ Al terminar cada sesión de trabajo, actualizar esta tabla:
 | 2026-06-13 | Juan Ricardo | + Fix: settings.controller permisos (TENANT_ADMIN + dot notation) | Ninguna | Ninguno | — |
 | 2026-06-13 | Juan Ricardo | + Fix: Home navbar con estado de sesión y banner para no-superadmins | Ninguna | Ninguno | — |
 | 2026-06-13 | Juan Ricardo | + Fix: fetch paginado con meta.pagination.totalItems | Ninguna | Ninguno | — |
+| 2026-06-13 | Antigravity  | + Sidebar responsivo con toggle, backdrop overlay y auto-cierre al navegar | Ninguna | Ninguno | — |
+| 2026-06-13 | Antigravity  | + Conversión responsiva de AppListView a listado tipo tarjetas (cards) key-value | Ninguna | Ninguno | — |
+| 2026-06-13 | Antigravity  | + Restricción exclusiva de edición y eliminación para el rol TENANT_ADMIN | Ninguna | Ninguno | — |
+| 2026-06-13 | Antigravity  | + Habilitación de edición y botón de eliminar para el resto de roles del inquilino | Ninguna | Ninguno | — |
+| 2026-06-13 | Antigravity  | + Ajuste responsivo del botón Guardar Cambios y selector en SettingsView | Ninguna | Ninguno | — |
 
 ---
 
