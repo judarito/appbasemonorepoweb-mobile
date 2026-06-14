@@ -47,3 +47,16 @@ Desde el directorio raíz:
 - **Verificación de tipos**: `bun run typecheck`
 - **Ejecutar pruebas**: `bun run test`
 - **Limpiar temporales y dependencias**: `bun run clean`
+
+## Creación de Forks
+
+Para crear un nuevo proyecto a partir de esta plantilla, consulta la [Guía de Creación de Forks](docs/development/fork-creation-guide.md).
+
+El comando principal (ejecutado en una copia limpia del repositorio) es:
+
+```bash
+bun run create-app --name mi-proyecto --display-name "Mi Proyecto"
+```
+
+Para actualizar tu fork con las mejoras y correcciones de la plantilla en el futuro, consulta la [Guía de Actualización de Forks](docs/development/fork-update-guide.md).
+
