@@ -59,26 +59,47 @@ export class MenusRepository {
   }
 
   async create(tenantId: string | null, data: CreateMenuInput) {
-    const [newMenu] = await db
-      .insert(menus)
-      .values({
-        tenantId,
-        parentId: data.parentId,
-        code: data.code,
-        label: data.label,
-        description: data.description,
-        route: data.route,
-        icon: data.icon,
-        sortOrder: data.sortOrder,
-        platform: data.platform,
-        requiredPermissionId: data.requiredPermissionId,
-        requiredFeatureCode: data.requiredFeatureCode,
-        isVisible: data.isVisible,
-        isActive: data.isActive,
-        metadata: data.metadata,
-      })
-      .returning();
-    return newMenu;
+    return await db.transaction(async (tx) => {
+      const [newMenu] = await tx
+        .insert(menus)
+        .values({
+          tenantId,
+          parentId: data.parentId,
+          code: data.code,
+          label: data.label,
+          description: data.description,
+          route: data.route,
+          icon: data.icon,
+          sortOrder: data.sortOrder,
+          platform: data.platform,
+          requiredPermissionId: data.requiredPermissionId,
+          requiredFeatureCode: data.requiredFeatureCode,
+          isVisible: data.isVisible,
+          isActive: data.isActive,
+          metadata: data.metadata,
+        })
+        .returning();
+
+      // Si es un menú global (creado por el superadmin), asociarlo por defecto a todos los roles TENANT_ADMIN
+      if (tenantId === null) {
+        const tenantAdminRoles = await tx
+          .select({ id: roles.id })
+          .from(roles)
+          .where(and(eq(roles.code, "TENANT_ADMIN"), isNull(roles.deletedAt)));
+
+        if (tenantAdminRoles.length > 0) {
+          await tx.insert(roleMenus).values(
+            tenantAdminRoles.map((r) => ({
+              roleId: r.id,
+              menuId: newMenu.id,
+              isVisible: true,
+            }))
+          );
+        }
+      }
+
+      return newMenu;
+    });
   }
 
   async update(id: string, tenantId: string | null, data: UpdateMenuInput) {

@@ -14,7 +14,9 @@ import {
   planFeatures,
   tenantSettings,
   tenantUsage,
-  auditLogs
+  auditLogs,
+  menus,
+  roleMenus
 } from "../../database/schema";
 import { eq, and, isNull, sql, or, ilike, count, gte, lte } from "drizzle-orm";
 import type { CreateTenantInput, UpdateTenantInput } from "./superadmin.schema";
@@ -192,6 +194,22 @@ export class SuperadminRepository {
           isDefault: true,
         })
         .returning();
+
+      // Asociar todos los menús globales de la plataforma al rol TENANT_ADMIN por defecto
+      const globalMenus = await tx
+        .select({ id: menus.id })
+        .from(menus)
+        .where(and(isNull(menus.tenantId), isNull(menus.deletedAt)));
+
+      if (globalMenus.length > 0) {
+        await tx.insert(roleMenus).values(
+          globalMenus.map((m) => ({
+            roleId: tenantAdminRole.id,
+            menuId: m.id,
+            isVisible: true,
+          }))
+        );
+      }
 
       // 4. Mapear permisos a roles del nuevo tenant
       // Obtener todos los permisos del sistema

@@ -24,10 +24,14 @@ export class RolesService {
       throw new NotFoundError(`Rol con ID '${id}' no encontrado.`);
     }
 
-    const permissions = await this.repository.getRolePermissions(id);
+    const [permissions, menuIds] = await Promise.all([
+      this.repository.getRolePermissions(id),
+      this.repository.getRoleMenus(id),
+    ]);
     return {
       ...role,
       permissions,
+      menuIds,
     };
   }
 
@@ -61,8 +65,8 @@ export class RolesService {
       throw new NotFoundError(`Rol con ID '${id}' no encontrado.`);
     }
 
-    if (existing.isSystem) {
-      throw new ForbiddenError("No se permite modificar los roles del sistema.");
+    if (existing.code === "TENANT_ADMIN") {
+      throw new ForbiddenError("No se permite modificar el rol Administrador del tenant (TENANT_ADMIN).");
     }
 
     await this.repository.update(id, tenantId, data);
@@ -87,8 +91,8 @@ export class RolesService {
       throw new NotFoundError(`Rol con ID '${id}' no encontrado.`);
     }
 
-    if (existing.isSystem) {
-      throw new ForbiddenError("No se permite eliminar roles del sistema.");
+    if (existing.code === "TENANT_ADMIN") {
+      throw new ForbiddenError("No se permite eliminar el rol Administrador del tenant (TENANT_ADMIN).");
     }
 
     const deletedRole = await this.repository.delete(id, tenantId);

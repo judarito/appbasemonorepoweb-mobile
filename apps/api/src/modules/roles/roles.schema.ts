@@ -17,6 +17,9 @@ export const createRoleSchema = z.object({
   permissionIds: z
     .array(z.string().uuid("Cada ID de permiso debe ser un UUID válido."))
     .default([]),
+  menuIds: z
+    .array(z.string().uuid("Cada ID de menú debe ser un UUID válido."))
+    .default([]),
 });
 
 export const updateRoleSchema = z.object({
@@ -31,6 +34,9 @@ export const updateRoleSchema = z.object({
     .optional(),
   permissionIds: z
     .array(z.string().uuid("Cada ID de permiso debe ser un UUID válido."))
+    .optional(),
+  menuIds: z
+    .array(z.string().uuid("Cada ID de menú debe ser un UUID válido."))
     .optional(),
 });
 

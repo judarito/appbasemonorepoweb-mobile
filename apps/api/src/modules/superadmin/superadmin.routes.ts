@@ -16,6 +16,7 @@ router.post("/tenants/:id/status", controller.updateTenantStatus);
 router.get("/tenants/:id/users", controller.getTenantUsers);
 router.get("/tenants/:id/usage", controller.getTenantUsage);
 router.post("/support/session", controller.createSupportSession);
+router.get("/permissions", controller.getPermissions);
 
 // --- PLANS ROUTING ---
 router.get("/plans", controller.getPlans);

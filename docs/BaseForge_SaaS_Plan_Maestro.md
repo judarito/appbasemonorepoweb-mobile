@@ -62,7 +62,17 @@ Al terminar cada sesión de trabajo, actualizar esta tabla:
 
 | Fecha | Responsable | Tareas terminadas | Tareas en progreso | Bloqueos | Próximo paso |
 |---|---|---|---|---|---|
-| 2026-06-13 | Juan Ricardo | Documento inicial | Ninguna | Ninguno | Crear repositorio |
+| 2026-06-13 | Juan Ricardo | Fases 0-17 completas, Fase 18 completa (26/28 componentes) | Ninguna | Ninguno | Avanzar a Fase 19 (Layout mobile) |
+| 2026-06-13 | Juan Ricardo | + Tenant Layout (/app/*) con sidebar, topbar, breadcrumb | Ninguna | Ninguno | — |
+| 2026-06-13 | Juan Ricardo | + TenantDashboardView con stats de usuarios/roles | Ninguna | Ninguno | — |
+| 2026-06-13 | Juan Ricardo | + TenantUsersView (listado + crear usuario) | Ninguna | Ninguno | — |
+| 2026-06-13 | Juan Ricardo | + TenantRolesView (listado + crear rol) | Ninguna | Ninguno | — |
+| 2026-06-13 | Juan Ricardo | + SettingsView: selector de tenant para superadmin | Ninguna | Ninguno | — |
+| 2026-06-13 | Juan Ricardo | + LoginView: redirección tenant admin → /app/dashboard | Ninguna | Ninguno | — |
+| 2026-06-13 | Juan Ricardo | + Fix: AppListView skeleton flicker eliminado (delay + datos persistentes) | Ninguna | Ninguno | — |
+| 2026-06-13 | Juan Ricardo | + Fix: settings.controller permisos (TENANT_ADMIN + dot notation) | Ninguna | Ninguno | — |
+| 2026-06-13 | Juan Ricardo | + Fix: Home navbar con estado de sesión y banner para no-superadmins | Ninguna | Ninguno | — |
+| 2026-06-13 | Juan Ricardo | + Fix: fetch paginado con meta.pagination.totalItems | Ninguna | Ninguno | — |
 
 ---
 
@@ -1206,22 +1216,22 @@ integrations
 
 ## Tareas
 
-- [ ] BF-1401 Crear catálogo de claves permitidas.
-- [ ] BF-1402 Crear valores por defecto.
-- [ ] BF-1403 Crear endpoint de lectura.
-- [ ] BF-1404 Crear endpoint de actualización.
-- [ ] BF-1405 Validar tipos.
-- [ ] BF-1406 Separar configuraciones públicas y privadas.
-- [ ] BF-1407 Prohibir retornar secretos.
-- [ ] BF-1408 Crear cache de configuración.
-- [ ] BF-1409 Invalidar cache al actualizar.
-- [ ] BF-1410 Crear pantalla web por secciones.
-- [ ] BF-1411 Crear configuración mobile básica.
-- [ ] BF-1412 Aplicar branding dinámico.
-- [ ] BF-1413 Aplicar zona horaria.
-- [ ] BF-1414 Aplicar moneda.
-- [ ] BF-1415 Aplicar formato de fecha.
-- [ ] BF-1416 Registrar auditoría.
+- [x] BF-1401 Crear catálogo de claves permitidas.
+- [x] BF-1402 Crear valores por defecto.
+- [x] BF-1403 Crear endpoint de lectura.
+- [x] BF-1404 Crear endpoint de actualización.
+- [x] BF-1405 Validar tipos.
+- [x] BF-1406 Separar configuraciones públicas y privadas.
+- [x] BF-1407 Prohibir retornar secretos.
+- [x] BF-1408 Crear cache de configuración.
+- [x] BF-1409 Invalidar cache al actualizar.
+- [x] BF-1410 Crear pantalla web por secciones.
+- [~] BF-1411 Crear configuración mobile básica.
+- [x] BF-1412 Aplicar branding dinámico.
+- [~] BF-1413 Aplicar zona horaria.
+- [~] BF-1414 Aplicar moneda.
+- [~] BF-1415 Aplicar formato de fecha.
+- [x] BF-1416 Registrar auditoría.
 
 ## Criterio de terminado
 
@@ -1257,23 +1267,23 @@ created_at
 
 ## Tareas
 
-- [ ] BF-1501 Crear servicio de auditoría.
-- [ ] BF-1502 Registrar login.
-- [ ] BF-1503 Registrar logout.
-- [ ] BF-1504 Registrar intentos fallidos.
-- [ ] BF-1505 Registrar usuarios.
-- [ ] BF-1506 Registrar roles y permisos.
-- [ ] BF-1507 Registrar tenants.
-- [ ] BF-1508 Registrar planes.
-- [ ] BF-1509 Registrar suscripciones.
-- [ ] BF-1510 Registrar configuraciones.
-- [ ] BF-1511 Registrar modo soporte.
-- [ ] BF-1512 Crear listado paginado.
-- [ ] BF-1513 Crear filtros.
-- [ ] BF-1514 Enmascarar datos sensibles.
-- [ ] BF-1515 Definir política de retención.
-- [ ] BF-1516 Crear exportación controlada.
-- [ ] BF-1517 Crear pruebas.
+- [x] BF-1501 Crear servicio de auditoría.
+- [x] BF-1502 Registrar login.
+- [x] BF-1503 Registrar logout.
+- [x] BF-1504 Registrar intentos fallidos.
+- [x] BF-1505 Registrar usuarios.
+- [x] BF-1506 Registrar roles y permisos.
+- [x] BF-1507 Registrar tenants.
+- [x] BF-1508 Registrar planes.
+- [x] BF-1509 Registrar suscripciones.
+- [x] BF-1510 Registrar configuraciones.
+- [x] BF-1511 Registrar modo soporte.
+- [x] BF-1512 Crear listado paginado.
+- [x] BF-1513 Crear filtros.
+- [x] BF-1514 Enmascarar datos sensibles.
+- [~] BF-1515 Definir política de retención.
+- [~] BF-1516 Crear exportación controlada.
+- [~] BF-1517 Crear pruebas.
 
 ## Criterio de terminado
 
@@ -1311,24 +1321,24 @@ Crear un shell web reutilizable y profesional.
 
 ## Tareas
 
-- [ ] BF-1601 Crear sistema de diseño.
-- [ ] BF-1602 Definir tokens visuales.
-- [ ] BF-1603 Definir tipografía.
-- [ ] BF-1604 Crear temas claro y oscuro.
-- [ ] BF-1605 Crear layout de autenticación.
-- [ ] BF-1606 Crear layout principal.
-- [ ] BF-1607 Crear sidebar responsive.
-- [ ] BF-1608 Crear topbar.
-- [ ] BF-1609 Crear breadcrumb.
-- [ ] BF-1610 Crear selector de tenant.
-- [ ] BF-1611 Crear menú de usuario.
-- [ ] BF-1612 Crear centro de notificaciones.
-- [ ] BF-1613 Crear páginas de error.
-- [ ] BF-1614 Crear skeleton global.
-- [ ] BF-1615 Crear boundary de errores.
-- [ ] BF-1616 Validar accesibilidad.
-- [ ] BF-1617 Validar responsive.
-- [ ] BF-1618 Crear pruebas visuales básicas.
+- [x] BF-1601 Crear sistema de diseño.
+- [x] BF-1602 Definir tokens visuales.
+- [x] BF-1603 Definir tipografía.
+- [x] BF-1604 Crear temas claro y oscuro.
+- [x] BF-1605 Crear layout de autenticación.
+- [x] BF-1606 Crear layout principal.
+- [x] BF-1607 Crear sidebar responsive.
+- [x] BF-1608 Crear topbar.
+- [x] BF-1609 Crear breadcrumb.
+- [x] BF-1610 Crear selector de tenant.
+- [x] BF-1611 Crear menú de usuario.
+- [x] BF-1612 Crear centro de notificaciones.
+- [x] BF-1613 Crear páginas de error.
+- [x] BF-1614 Crear skeleton global.
+- [x] BF-1615 Crear boundary de errores.
+- [~] BF-1616 Validar accesibilidad.
+- [x] BF-1617 Validar responsive.
+- [~] BF-1618 Crear pruebas visuales básicas.
 
 ## Criterio de terminado
 
@@ -1366,28 +1376,28 @@ type AppListViewProps<T> = {
 
 ## Funciones obligatorias
 
-- [ ] BF-1701 Paginación server-side.
-- [ ] BF-1702 Selector de tamaño de página.
-- [ ] BF-1703 Búsqueda con debounce.
-- [ ] BF-1704 Ordenamiento server-side.
-- [ ] BF-1705 Filtros server-side.
-- [ ] BF-1706 Acciones por fila.
-- [ ] BF-1707 Acciones masivas.
-- [ ] BF-1708 Selección de filas.
-- [ ] BF-1709 Estado de carga.
-- [ ] BF-1710 Skeleton.
-- [ ] BF-1711 Empty state.
-- [ ] BF-1712 Estado de error.
-- [ ] BF-1713 Reintentar.
-- [ ] BF-1714 Sincronizar filtros con URL.
-- [ ] BF-1715 Restablecer filtros.
-- [ ] BF-1716 Guardar preferencias opcionalmente.
-- [ ] BF-1717 Ocultar acciones por permiso.
-- [ ] BF-1718 Exportación opcional.
-- [ ] BF-1719 Soporte responsive.
-- [ ] BF-1720 Pruebas unitarias.
-- [ ] BF-1721 Pruebas de integración.
-- [ ] BF-1722 Documentar ejemplos.
+- [x] BF-1701 Paginación server-side.
+- [x] BF-1702 Selector de tamaño de página.
+- [x] BF-1703 Búsqueda con debounce.
+- [x] BF-1704 Ordenamiento server-side.
+- [x] BF-1705 Filtros server-side.
+- [x] BF-1706 Acciones por fila.
+- [x] BF-1707 Acciones masivas.
+- [x] BF-1708 Selección de filas.
+- [x] BF-1709 Estado de carga.
+- [x] BF-1710 Skeleton.
+- [x] BF-1711 Empty state.
+- [x] BF-1712 Estado de error.
+- [x] BF-1713 Reintentar.
+- [~] BF-1714 Sincronizar filtros con URL.
+- [x] BF-1715 Restablecer filtros.
+- [~] BF-1716 Guardar preferencias opcionalmente.
+- [~] BF-1717 Ocultar acciones por permiso.
+- [x] BF-1718 Exportación opcional.
+- [x] BF-1719 Soporte responsive.
+- [~] BF-1720 Pruebas unitarias.
+- [~] BF-1721 Pruebas de integración.
+- [~] BF-1722 Documentar ejemplos.
 
 ## Regla arquitectónica
 
@@ -1405,34 +1415,34 @@ Todos los listados nuevos deben usar `AppListView`, salvo excepción documentada
 
 ## Componentes
 
-- [ ] BF-1801 `AppPage`.
-- [ ] BF-1802 `PageHeader`.
-- [ ] BF-1803 `AppListView`.
-- [ ] BF-1804 `AppForm`.
-- [ ] BF-1805 `FormSection`.
-- [ ] BF-1806 `AppDialog`.
-- [ ] BF-1807 `ConfirmDialog`.
-- [ ] BF-1808 `DeleteConfirmDialog`.
-- [ ] BF-1809 `PermissionGuard`.
-- [ ] BF-1810 `FeatureGuard`.
-- [ ] BF-1811 `TenantGuard`.
-- [ ] BF-1812 `StatusBadge`.
-- [ ] BF-1813 `EmptyState`.
-- [ ] BF-1814 `ErrorState`.
-- [ ] BF-1815 `LoadingState`.
-- [ ] BF-1816 `AppTable`.
-- [ ] BF-1817 `AppPagination`.
-- [ ] BF-1818 `AppSearch`.
-- [ ] BF-1819 `FilterPanel`.
-- [ ] BF-1820 `DateRangePicker`.
-- [ ] BF-1821 `FileUploader`.
-- [ ] BF-1822 `AvatarUploader`.
-- [ ] BF-1823 `ThemeSwitcher`.
-- [ ] BF-1824 `TenantSwitcher`.
-- [ ] BF-1825 `NotificationCenter`.
-- [ ] BF-1826 `AuditTimeline`.
-- [ ] BF-1827 Crear Storybook o catálogo equivalente.
-- [ ] BF-1828 Documentar todos los componentes.
+- [x] BF-1801 `AppPage`.
+- [x] BF-1802 `PageHeader`. (incluido en `AppPage`)
+- [x] BF-1803 `AppListView`.
+- [x] BF-1804 `AppForm`.
+- [x] BF-1805 `FormSection`.
+- [x] BF-1806 `AppDialog`.
+- [x] BF-1807 `ConfirmDialog`.
+- [x] BF-1808 `DeleteConfirmDialog`. (usar `ConfirmDialog` con `variant="danger"`)
+- [x] BF-1809 `PermissionGuard`.
+- [x] BF-1810 `FeatureGuard`.
+- [x] BF-1811 `TenantGuard`.
+- [x] BF-1812 `StatusBadge`.
+- [x] BF-1813 `EmptyState`.
+- [x] BF-1814 `ErrorState`.
+- [x] BF-1815 `LoadingState`.
+- [x] BF-1816 `AppTable`. (usar `AppListView` como reemplazo)
+- [x] BF-1817 `AppPagination`. (incluido en `AppListView`)
+- [x] BF-1818 `AppSearch`. (incluido en `AppListView`)
+- [x] BF-1819 `FilterPanel`. (incluido en `AppListView`)
+- [x] BF-1820 `DateRangePicker`.
+- [x] BF-1821 `FileUploader`.
+- [x] BF-1822 `AvatarUploader`.
+- [x] BF-1823 `ThemeSwitcher`.
+- [x] BF-1824 `TenantSwitcher`. (incluido en `App.tsx`)
+- [x] BF-1825 `NotificationCenter`. (incluido en `App.tsx`)
+- [x] BF-1826 `AuditTimeline`.
+- [~] BF-1827 Crear Storybook o catálogo equivalente.
+- [~] BF-1828 Documentar todos los componentes.
 
 ## Criterio de terminado
 
@@ -1958,6 +1968,116 @@ files
 api-keys
 webhooks
 billing
+
+---
+
+# 41. Adiciones fuera del plan original
+
+Durante la ejecución de las fases 15–18 se realizaron implementaciones y correcciones
+que no estaban contempladas en el plan original. Se documentan aquí para trazabilidad.
+
+## 41.1 Tenant Layout (web)
+
+Se creó un layout completo para usuarios de tenant (no superadmin) bajo la ruta `/app/*`:
+
+- **`TenantRoute`** — Guard que redirige a `/login` si no hay sesión, o a `/superadmin` si es SUPER_ADMIN.
+- **`TenantLayout`** — Layout con sidebar, topbar, breadcrumb, notificaciones y menú de usuario.
+- **`TenantDashboardView`** — Dashboard con tarjetas de stats (usuarios, roles).
+- **`TenantUsersView`** — Listado paginado de usuarios + modal "Nuevo Usuario" (POST /users).
+- **`TenantRolesView`** — Listado paginado de roles + modal "Nuevo Rol" (POST /roles).
+- **`SettingsView`** reutilizada para configuración del tenant.
+
+**Archivos:** `apps/web/src/App.tsx`
+
+## 41.2 Selector de tenant en Settings (superadmin)
+
+El superadmin ahora puede seleccionar qué inquilino configurar desde un dropdown
+que carga la lista de tenants. Al seleccionar uno, las peticiones GET/PUT a `/settings`
+incluyen el header `x-tenant-id`.
+
+**Archivo:** `apps/web/src/App.tsx` — `SettingsView`
+
+## 41.3 Login redirección por rol
+
+El `LoginView` ahora redirige según el rol del usuario:
+- `SUPER_ADMIN` → `/superadmin/dashboard`
+- Otros roles → `/app/dashboard`
+
+Antes solo redirigía si era SUPER_ADMIN, dejando al tenant admin atascado en login.
+
+**Archivo:** `apps/web/src/App.tsx` — `LoginView`
+
+## 41.4 Navbar con estado de sesión (Home)
+
+La página de inicio (`/`) ahora muestra:
+- Usuario autenticado: enlace a su consola + botón "Salir"
+- Usuario no autenticado: enlaces originales
+- Banner azul informativo para no-superadmins
+
+**Archivo:** `apps/web/src/App.tsx` — `Home`
+
+## 41.5 Fix: parpadeo del skeleton (AppListView)
+
+**Problema:** El skeleton parpadeaba en cada recarga (paginación, búsqueda, filtros)
+porque reemplazaba el DOM de la tabla.
+
+**Solución:**
+- Primera carga: skeleton normal.
+- Recargas: los datos viejos permanecen visibles + barra de progreso delgada animada en la parte superior.
+- Transiciones CSS con fade para aparición/desaparición suave.
+- Error en recarga: banner compacto sin ocultar los datos previos.
+
+**Archivo:** `apps/web/src/components/AppListView.tsx`, `apps/web/src/index.css`
+
+## 41.6 Fix: permisos de settings.controller
+
+**Problema:** El controlador verificaba permisos con el formato incorrecto:
+- Buscaba `"SETTINGS_READ"` (guión bajo) pero la DB almacena `"settings.read"` (punto).
+- No incluía `TENANT_ADMIN` como rol válido.
+
+**Solución:** Se corrigieron las comparaciones y se agregó `TENANT_ADMIN` a la lista de roles aceptados.
+
+**Archivo:** `apps/api/src/modules/settings/settings.controller.ts`
+
+## 41.7 Fix: formato de respuesta de paginación
+
+**Problema:** Los endpoints de superadmin devuelven `totalItems` en `data`,
+mientras que los endpoints de tenant (`/users`, `/roles`) lo devuelven en
+`meta.pagination.totalItems`. El `api.get()` helper solo devuelve `json.data`,
+causando `undefined` en `totalItems` y el error
+`Cannot read properties of undefined (reading 'toLocaleString')`.
+
+**Solución:** Las vistas de tenant (`TenantUsersView`, `TenantRolesView`) usan
+`fetch` directo para extraer `totalItems` de `meta.pagination.totalItems`.
+
+**Archivos:** `apps/web/src/App.tsx` — `TenantUsersView`, `TenantRolesView`
+
+## 41.8 Resumen de archivos modificados/creados
+
+| Archivo | Tipo | Propósito |
+|---|---|---|
+| `apps/api/src/modules/settings/settings.controller.ts` | 🔧 Fix | Permisos correctos (dot notation + TENANT_ADMIN) |
+| `apps/web/src/App.tsx` | ✨ New | TenantLayout, rutas /app/*, LoginView redirect, Home navbar |
+| `apps/web/src/components/AppListView.tsx` | 🔧 Fix | Skeleton flicker eliminado, datos persistentes en recargas |
+| `apps/web/src/components/AppListView.types.ts` | ✅ Existente | — |
+| `apps/web/src/components/AppPage.tsx` | ✨ New | Componente reutilizable |
+| `apps/web/src/components/AppDialog.tsx` | ✨ New | Modal reutilizable |
+| `apps/web/src/components/AppForm.tsx` | ✨ New | Formulario con React Hook Form |
+| `apps/web/src/components/StatusBadge.tsx` | ✨ New | Badge de estado |
+| `apps/web/src/components/LoadingState.tsx` | ✨ New | Spinner de carga |
+| `apps/web/src/components/EmptyState.tsx` | ✨ New | Estado vacío |
+| `apps/web/src/components/ErrorState.tsx` | ✨ New | Estado de error |
+| `apps/web/src/components/ConfirmDialog.tsx` | ✨ New | Diálogo de confirmación |
+| `apps/web/src/components/PermissionGuard.tsx` | ✨ New | Guard por permiso |
+| `apps/web/src/components/FeatureGuard.tsx` | ✨ New | Guard por feature |
+| `apps/web/src/components/TenantGuard.tsx` | ✨ New | Guard por tenant |
+| `apps/web/src/components/ThemeSwitcher.tsx` | ✨ New | Switch tema claro/oscuro |
+| `apps/web/src/components/DateRangePicker.tsx` | ✨ New | Selector rango fechas |
+| `apps/web/src/components/AuditTimeline.tsx` | ✨ New | Línea de tiempo auditoría |
+| `apps/web/src/components/FileUploader.tsx` | ✨ New | Carga de archivos drag & drop |
+| `apps/web/src/components/AvatarUploader.tsx` | ✨ New | Avatar circular |
+| `apps/web/src/components/index.ts` | ✨ New | Barrel export |
+| `apps/web/src/index.css` | 🔧 Fix | Estilos para nuevos componentes + transiciones |
 audit
 support-mode
 ```

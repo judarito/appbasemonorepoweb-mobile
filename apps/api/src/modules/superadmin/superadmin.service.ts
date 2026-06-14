@@ -475,5 +475,9 @@ export class SuperadminService {
     ]);
     return { items, totalItems };
   }
+
+  async getPermissions() {
+    return await db.select().from(permissions).orderBy(permissions.code);
+  }
 }
 

@@ -48,7 +48,15 @@ export class SettingsController {
     const tenantId = c.get("tenantId" as any);
     const user = c.get("user" as any);
 
+    // Superadmin sin contexto de tenant: devolver catálogo base por defecto
     if (!tenantId) {
+      if (user.roles.includes("SUPER_ADMIN")) {
+        const settings = await settingsService.getSettingsForTenant("00000000-0000-0000-0000-000000000000", false);
+        return c.json({
+          success: true,
+          data: settings,
+        });
+      }
       throw new ForbiddenError("Debe especificar un contexto de inquilino.");
     }
 
@@ -56,8 +64,9 @@ export class SettingsController {
     const hasAccess =
       user.roles.includes("SUPER_ADMIN") ||
       user.roles.includes("ADMIN") ||
-      user.permissions.includes("SETTINGS_READ") ||
-      user.permissions.includes("SETTINGS_UPDATE");
+      user.roles.includes("TENANT_ADMIN") ||
+      user.permissions.includes("settings.read") ||
+      user.permissions.includes("settings.update");
 
     if (!hasAccess) {
       throw new ForbiddenError("No tienes permisos para ver la configuración del inquilino.");
@@ -77,6 +86,9 @@ export class SettingsController {
     const user = c.get("user" as any);
 
     if (!tenantId) {
+      if (user.roles.includes("SUPER_ADMIN")) {
+        throw new ForbiddenError("Debe seleccionar un inquilino para guardar la configuración global.");
+      }
       throw new ForbiddenError("Debe especificar un contexto de inquilino.");
     }
 
@@ -84,7 +96,8 @@ export class SettingsController {
     const hasAccess =
       user.roles.includes("SUPER_ADMIN") ||
       user.roles.includes("ADMIN") ||
-      user.permissions.includes("SETTINGS_UPDATE");
+      user.roles.includes("TENANT_ADMIN") ||
+      user.permissions.includes("settings.update");
 
     if (!hasAccess) {
       throw new ForbiddenError("No tienes permisos para actualizar la configuración del inquilino.");

@@ -1,5 +1,5 @@
 import { db } from "../../database/db";
-import { roles, rolePermissions, permissions } from "../../database/schema";
+import { roles, rolePermissions, permissions, roleMenus } from "../../database/schema";
 import { eq, and, isNull, sql, inArray } from "drizzle-orm";
 import type { CreateRoleInput, UpdateRoleInput } from "./roles.schema";
 
@@ -79,7 +79,18 @@ export class RolesRepository {
     return results;
   }
 
-  async create(data: CreateRoleInput & { tenantId: string | null }) {
+  async getRoleMenus(roleId: string) {
+    const results = await db
+      .select({
+        menuId: roleMenus.menuId,
+      })
+      .from(roleMenus)
+      .where(eq(roleMenus.roleId, roleId));
+
+    return results.map((r) => r.menuId);
+  }
+
+  async create(data: CreateRoleInput & { tenantId: string | null; menuIds?: string[] }) {
     return await db.transaction(async (tx) => {
       // 1. Insertar el rol
       const [newRole] = await tx
@@ -107,11 +118,24 @@ export class RolesRepository {
           );
       }
 
+      // 3. Vincular los menús si se proveen
+      if (data.menuIds && data.menuIds.length > 0) {
+        await tx
+          .insert(roleMenus)
+          .values(
+            data.menuIds.map((mId) => ({
+              roleId: newRole.id,
+              menuId: mId,
+              isVisible: true,
+            }))
+          );
+      }
+
       return newRole;
     });
   }
 
-  async update(id: string, tenantId: string | null, data: UpdateRoleInput) {
+  async update(id: string, tenantId: string | null, data: UpdateRoleInput & { menuIds?: string[] }) {
     return await db.transaction(async (tx) => {
       const filter = tenantId
         ? and(eq(roles.id, id), eq(roles.tenantId, tenantId), isNull(roles.deletedAt))
@@ -144,6 +168,25 @@ export class RolesRepository {
               data.permissionIds.map((pId) => ({
                 roleId: id,
                 permissionId: pId,
+              }))
+            );
+        }
+      }
+
+      // 3. Si se suministran menús, sincronizar
+      if (data.menuIds !== undefined) {
+        // Eliminar menús existentes
+        await tx.delete(roleMenus).where(eq(roleMenus.roleId, id));
+
+        // Insertar nuevos menús
+        if (data.menuIds.length > 0) {
+          await tx
+            .insert(roleMenus)
+            .values(
+              data.menuIds.map((mId) => ({
+                roleId: id,
+                menuId: mId,
+                isVisible: true,
               }))
             );
         }

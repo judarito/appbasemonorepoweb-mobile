@@ -505,5 +505,17 @@ export class SuperadminController {
       traceId: c.get("traceId" as any),
     });
   };
+
+  getPermissions = async (c: Context) => {
+    const items = await this.service.getPermissions();
+    return c.json({
+      success: true,
+      data: {
+        items,
+      },
+      meta: null,
+      traceId: c.get("traceId" as any),
+    });
+  };
 }
 
