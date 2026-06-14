@@ -4,6 +4,7 @@ import { ConflictError, NotFoundError } from "../../common/errors";
 import { db } from "../../database/db";
 import { tenantFeatures, features } from "../../database/schema";
 import { eq, and, isNull, or, sql } from "drizzle-orm";
+import { menuCache } from "../../common/cache.service";
 
 export interface MenuItemNode {
   id: string;
@@ -44,7 +45,9 @@ export class MenusService {
       }
     }
 
-    return await this.repository.create(tenantId, data);
+    const menu = await this.repository.create(tenantId, data);
+    if (tenantId) menuCache.invalidatePrefix(`tenant:${tenantId}:menus`);
+    return menu;
   }
 
   async updateMenu(id: string, tenantId: string | null, data: UpdateMenuInput) {
@@ -62,12 +65,16 @@ export class MenusService {
     }
 
 
-    return await this.repository.update(id, tenantId, data);
+    const updated = await this.repository.update(id, tenantId, data);
+    if (tenantId) menuCache.invalidatePrefix(`tenant:${tenantId}:menus`);
+    return updated;
   }
 
   async deleteMenu(id: string, tenantId: string | null) {
     await this.getMenu(id, tenantId);
-    return await this.repository.delete(id, tenantId);
+    const result = await this.repository.delete(id, tenantId);
+    if (tenantId) menuCache.invalidatePrefix(`tenant:${tenantId}:menus`);
+    return result;
   }
 
   async associateRoles(menuId: string, tenantId: string | null, roleIds: string[]) {
@@ -87,6 +94,11 @@ export class MenusService {
     platform?: "WEB" | "MOBILE" | "BOTH",
     userPermissions: string[] = []
   ): Promise<MenuItemNode[]> {
+    // Cache key incluye userId para que cada usuario vea su propia vista de menús
+    const cacheKey = `tenant:${tenantId ?? "global"}:menus:${userId}:${platform ?? "ALL"}`;
+    const cached = menuCache.get(cacheKey);
+    if (cached) return cached as MenuItemNode[];
+
     // 1. Obtener ítems candidatos asociados a roles del usuario
     const rawItems = await this.repository.getMenuItemsForUser(userId, tenantId, platform);
 
@@ -131,8 +143,10 @@ export class MenusService {
       return true;
     });
 
-    // 4. Construir árbol recursivamente
-    return this.buildMenuTree(filteredItems, null);
+    // 4. Construir árbol recursivamente y cachear el resultado
+    const tree = this.buildMenuTree(filteredItems, null);
+    menuCache.set(cacheKey, tree);
+    return tree;
   }
 
   private buildMenuTree(items: any[], parentId: string | null): MenuItemNode[] {

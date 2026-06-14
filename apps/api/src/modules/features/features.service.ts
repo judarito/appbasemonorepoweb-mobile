@@ -1,6 +1,7 @@
 import { db } from "../../database/db";
 import { tenantFeatures, features, subscriptions, planFeatures } from "../../database/schema";
 import { eq, and, isNull, or, sql } from "drizzle-orm";
+import { featureCache } from "../../common/cache.service";
 
 export class FeaturesService {
   /**
@@ -9,10 +10,37 @@ export class FeaturesService {
    * 1. Overrides específicos de tenant (`tenant_features`).
    * 2. Características del plan de suscripción activo (`plan_features` vía `subscriptions`).
    * 3. Valor por defecto del catálogo de características (`features`).
+   *
+   * Utiliza caché en memoria (LRU) con TTL de 5 minutos para evitar
+   * 3 queries en cada request que usa el middleware `requireFeature`.
    */
   async hasFeature(tenantId: string | null, featureCode: string): Promise<boolean> {
+    const cacheKey = `tenant:${tenantId ?? "global"}:feature:${featureCode.toLowerCase()}`;
+
+    // 1. Intentar resolver desde caché
+    const cached = featureCache.get(cacheKey);
+    if (cached !== undefined) {
+      return cached;
+    }
+
+    const result = await this.resolveFeature(tenantId, featureCode);
+
+    // Guardar en caché (TTL por defecto: 5 minutos)
+    featureCache.set(cacheKey, result);
+
+    return result;
+  }
+
+  /**
+   * Invalida el caché de features para un tenant específico.
+   * Debe llamarse al actualizar tenant_features o cambiar de plan.
+   */
+  invalidateTenantCache(tenantId: string): void {
+    featureCache.invalidatePrefix(`tenant:${tenantId}:feature:`);
+  }
+
+  private async resolveFeature(tenantId: string | null, featureCode: string): Promise<boolean> {
     if (!tenantId) {
-      // Si no hay contexto de tenant, caer al valor por defecto del catálogo de features
       return await this.getDefaultFeatureValue(featureCode);
     }
 

@@ -2,41 +2,25 @@ import { SettingsRepository } from "./settings.repository";
 import { SETTINGS_CATALOG, getSettingDefinition } from "./settings.config";
 import { encrypt, decrypt } from "../../common/crypto";
 import { ValidationError, NotFoundError } from "../../common/errors";
+import { settingsCache } from "../../common/cache.service";
 
 export class SettingsService {
   private repository = new SettingsRepository();
-  private cache = new Map<string, { data: any; expiresAt: number }>();
-  private CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutos de cache
 
-  private getCacheKey(tenantId: string, isPublicOnly: boolean): string {
-    return `${tenantId}:${isPublicOnly}`;
-  }
-
-  private getCached(tenantId: string, isPublicOnly: boolean) {
-    const entry = this.cache.get(this.getCacheKey(tenantId, isPublicOnly));
-    if (entry && entry.expiresAt > Date.now()) {
-      return entry.data;
-    }
-    return null;
-  }
-
-  private setCached(tenantId: string, isPublicOnly: boolean, data: any) {
-    this.cache.set(this.getCacheKey(tenantId, isPublicOnly), {
-      data,
-      expiresAt: Date.now() + this.CACHE_TTL_MS,
-    });
+  private cacheKey(tenantId: string, isPublicOnly: boolean): string {
+    return `tenant:${tenantId}:settings:${isPublicOnly ? "public" : "all"}`;
   }
 
   public clearCache(tenantId: string) {
-    this.cache.delete(this.getCacheKey(tenantId, true));
-    this.cache.delete(this.getCacheKey(tenantId, false));
+    settingsCache.invalidatePrefix(`tenant:${tenantId}:settings:`);
   }
 
   async getSettingsForTenant(tenantId: string, isPublicOnly: boolean = false) {
-    // 1. Revisar caché
-    const cached = this.getCached(tenantId, isPublicOnly);
+    // 1. Revisar caché centralizado
+    const key = this.cacheKey(tenantId, isPublicOnly);
+    const cached = settingsCache.get(key);
     if (cached) {
-      return cached;
+      return cached as any[];
     }
 
     // 2. Traer configuraciones guardadas de BD
@@ -85,8 +69,8 @@ export class SettingsService {
       });
     }
 
-    // 4. Guardar en caché y retornar
-    this.setCached(tenantId, isPublicOnly, result);
+    // 4. Guardar en caché centralizado y retornar
+    settingsCache.set(key, result as unknown as Record<string, unknown>);
     return result;
   }
 

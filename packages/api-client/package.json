@@ -1,0 +1,11 @@
+{
+  "name": "@baseforge/api-client",
+  "version": "0.1.0",
+  "private": false,
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "dependencies": {
+    "@baseforge/shared": "workspace:*",
+    "@baseforge/validation": "workspace:*"
+  }
+}

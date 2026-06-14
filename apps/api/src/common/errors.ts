@@ -1,9 +1,15 @@
+export interface ErrorDetail {
+  field?: string;
+  message: string;
+  code?: string;
+}
+
 export class AppError extends Error {
   public readonly status: number;
   public readonly code: string;
-  public readonly details: any[];
+  public readonly details: ErrorDetail[];
 
-  constructor(message: string, status: number = 500, code: string = "INTERNAL_SERVER_ERROR", details: any[] = []) {
+  constructor(message: string, status: number = 500, code: string = "INTERNAL_SERVER_ERROR", details: ErrorDetail[] = []) {
     super(message);
     this.status = status;
     this.code = code;
@@ -14,7 +20,7 @@ export class AppError extends Error {
 }
 
 export class ValidationError extends AppError {
-  constructor(message: string = "Los datos enviados no son válidos.", details: any[] = []) {
+  constructor(message: string = "Los datos enviados no son válidos.", details: ErrorDetail[] = []) {
     super(message, 400, "VALIDATION_ERROR", details);
   }
 }

@@ -262,8 +262,24 @@ export class UsersRepository {
     const existing = await this.findById(id, tenantId);
     if (!existing) return null;
 
-    const updateData: any = { ...data };
-    updateData.updatedAt = new Date();
+    // Verificar membresía activa en el tenant (evita TOCTOU entre findById y update)
+    if (tenantId) {
+      const membership = await db
+        .select({ id: tenantUsers.id })
+        .from(tenantUsers)
+        .where(and(
+          eq(tenantUsers.userId, id),
+          eq(tenantUsers.tenantId, tenantId),
+          eq(tenantUsers.status, "ACTIVE"),
+          isNull(tenantUsers.deletedAt),
+        ))
+        .limit(1)
+        .then((r) => r[0]);
+
+      if (!membership) return null;
+    }
+
+    const updateData: Record<string, unknown> = { ...data, updatedAt: new Date() };
 
     const results = await db
       .update(platformUsers)
@@ -339,9 +355,11 @@ export class UsersRepository {
   }
 
   async revokeUserSessions(userId: string, tenantId: string | null) {
+    // Seguridad: si se pasa tenantId, filtrar por tenant.
+    // Si es null (superadmin), se revocan SOLO las sesiones activas sin tenant (globales).
     const filter = tenantId
       ? and(eq(userSessions.userId, userId), eq(userSessions.tenantId, tenantId), eq(userSessions.status, "ACTIVE"))
-      : and(eq(userSessions.userId, userId), eq(userSessions.status, "ACTIVE"));
+      : and(eq(userSessions.userId, userId), isNull(userSessions.tenantId), eq(userSessions.status, "ACTIVE"));
 
     return await db
       .update(userSessions)

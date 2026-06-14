@@ -100,6 +100,15 @@ export const SETTINGS_CATALOG: SettingDefinition[] = [
     defaultValue: true,
     description: "Habilita notificaciones internas."
   },
+  // pagination
+  {
+    key: "pagination.page_size",
+    groupName: "general",
+    valueType: "NUMBER",
+    isPublic: false,
+    defaultValue: 10,
+    description: "Número de elementos por página en listados (máx. 100)."
+  },
   // security
   {
     key: "security.password_expiration_days",

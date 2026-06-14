@@ -2,9 +2,11 @@ import React from "react";
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Share, Alert } from "react-native";
 import { useAuth } from "../../src/context/AuthContext";
 import { MENU_ITEMS } from "../../src/config/menu.config";
+import { useRouter } from "expo-router";
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const router = useRouter();
 
   const handleShare = async () => {
     try {
@@ -92,6 +94,17 @@ export default function Dashboard() {
         <View style={styles.actionButtonDetails}>
           <Text style={styles.actionButtonTitle}>Invitar Compañero</Text>
           <Text style={styles.actionButtonSub}>Comparte el enlace de acceso</Text>
+        </View>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[styles.actionButton, { marginTop: 12 }]}
+        onPress={() => router.push("/files")}
+      >
+        <Text style={styles.actionButtonEmoji}>📂</Text>
+        <View style={styles.actionButtonDetails}>
+          <Text style={styles.actionButtonTitle}>Almacenamiento de Archivos</Text>
+          <Text style={styles.actionButtonSub}>Subir y gestionar archivos seguros</Text>
         </View>
       </TouchableOpacity>
 

@@ -3,6 +3,7 @@ import { db } from "../database/db";
 import { tenants, tenantUsers } from "../database/schema";
 import { eq, and, isNull } from "drizzle-orm";
 import { UnauthorizedError, ForbiddenError } from "../common/errors";
+import { auditService } from "../common/audit.service";
 import { logger } from "./logger";
 
 export const tenantContext = async (c: Context, next: Next) => {
@@ -18,9 +19,33 @@ export const tenantContext = async (c: Context, next: Next) => {
   // Si el usuario es un SUPER_ADMIN, permitimos la suplantación de inquilino mediante la cabecera 'x-tenant-id'
   const impersonatedTenantId = c.req.header("x-tenant-id");
   if (impersonatedTenantId && user.roles.includes("SUPER_ADMIN")) {
+    // Validar que el tenant destino exista
+    const targetTenant = await db
+      .select({ id: tenants.id, code: tenants.code })
+      .from(tenants)
+      .where(and(eq(tenants.id, impersonatedTenantId), isNull(tenants.deletedAt)))
+      .limit(1)
+      .then((r) => r[0]);
+
+    if (!targetTenant) {
+      throw new ForbiddenError("El inquilino destino no existe.");
+    }
+
     tenantId = impersonatedTenantId;
     c.set("isImpersonated", true);
-    logger.info(`[Superadmin Impersonation] Superadministrador ${user.id} está operando sobre el inquilino (tenant) ${tenantId}`);
+
+    // Auditoría OBLIGATORIA (no solo log)
+    auditService.log({
+      tenantId: impersonatedTenantId,
+      actorUserId: user.id,
+      action: "SUPERADMIN_IMPERSONATION",
+      entityType: "TENANT",
+      entityId: impersonatedTenantId,
+      result: "SUCCESS",
+      metadata: { tenantCode: targetTenant.code, sessionId: c.get("session" as any)?.id },
+    });
+
+    logger.info(`[Superadmin Impersonation] Superadmin ${user.id} → tenant ${targetTenant.code} (${impersonatedTenantId})`);
   }
 
   // Si no hay tenantId en absoluto (ej. superadmin operando globalmente sin contexto de tenant)

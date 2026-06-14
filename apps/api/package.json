@@ -10,6 +10,11 @@
     "test": "bun test"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1068.0",
+    "@aws-sdk/s3-request-presigner": "^3.1068.0",
+    "@azure/storage-blob": "^12.32.0",
+    "@baseforge/shared": "workspace:*",
+    "@baseforge/validation": "workspace:*",
     "@hono/swagger-ui": "^0.6.1",
     "hono": "^4.4.2",
     "pino": "^9.1.0",

@@ -27,7 +27,7 @@ export class UsersService {
     tenantId: string | null,
     page: number,
     pageSize: number,
-    filters: { search?: string; status?: string; roleId?: string; orderBy?: string; orderDirection?: "asc" | "desc" } = {}
+    filters: { search?: string; status?: string; roleId?: string; orderBy?: string; orderDirection?: "asc" | "desc"; afterCursor?: string } = {}
   ) {
     const [users, totalItems] = await Promise.all([
       this.repository.findMany(tenantId, page, pageSize, filters),

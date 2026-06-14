@@ -39,13 +39,29 @@ export class AuthService {
       throw new UnauthorizedError("Credenciales incorrectas.");
     }
 
+    // 2a. Verificar bloqueo por intentos fallidos (fuerza bruta)
+    const MAX_LOGIN_ATTEMPTS = 5;
+    const LOCKOUT_MINUTES = 15;
+    const isLocked = user.lockedUntil && new Date(user.lockedUntil) > new Date();
+    if (isLocked) {
+      const remainingMinutes = Math.ceil((new Date(user.lockedUntil!).getTime() - Date.now()) / 60000);
+      throw new UnauthorizedError(
+        `Cuenta bloqueada temporalmente por múltiples intentos fallidos. Intenta de nuevo en ${remainingMinutes} minuto(s).`
+      );
+    }
+
     // 2. Verificar contraseña
     const isPasswordValid = await Bun.password.verify(data.password, user.passwordHash);
     if (!isPasswordValid) {
-      // Incrementar intentos fallidos
-      await db.update(platformUsers).set({
-        failedLoginAttempts: user.failedLoginAttempts + 1
-      }).where(eq(platformUsers.id, user.id));
+      const newAttempts = user.failedLoginAttempts + 1;
+
+      // Bloquear si supera el límite
+      const updates: Record<string, unknown> = { failedLoginAttempts: newAttempts };
+      if (newAttempts >= MAX_LOGIN_ATTEMPTS) {
+        updates.lockedUntil = new Date(Date.now() + LOCKOUT_MINUTES * 60 * 1000);
+      }
+
+      await db.update(platformUsers).set(updates).where(eq(platformUsers.id, user.id));
 
       // Registrar intento fallido de login
       auditService.log({
@@ -179,7 +195,7 @@ export class AuthService {
       tokenVersion: user.tokenVersion,
     });
 
-    const refreshTokenJwt = await this.signRefreshToken(dbRefreshToken.id, session.id, familyId, tokenString, dbRefreshToken.expiresAt);
+    const refreshTokenJwt = await this.signRefreshToken(dbRefreshToken.id, session.id, familyId, tokenString, dbRefreshToken.expiresAt, user.tokenVersion);
 
     // Registrar login exitoso
     auditService.log({
@@ -346,7 +362,8 @@ export class AuthService {
       session.id,
       familyId,
       newTokenString,
-      newDbToken.expiresAt
+      newDbToken.expiresAt,
+      user.tokenVersion
     );
 
     return {
@@ -390,7 +407,8 @@ export class AuthService {
     sessionId: string,
     familyId: string,
     tokenString: string,
-    expiresAt: Date
+    expiresAt: Date,
+    tokenVersion: number
   ) {
     const exp = Math.floor(expiresAt.getTime() / 1000);
     const iat = Math.floor(Date.now() / 1000);
@@ -401,6 +419,7 @@ export class AuthService {
         sessionId,
         familyId,
         tokenString,
+        tokenVersion,
         exp,
         iat,
       },

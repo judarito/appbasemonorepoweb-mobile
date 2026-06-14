@@ -1,4 +1,4 @@
-import { pgSchema, text, varchar, timestamp, boolean, integer, jsonb, uuid, primaryKey, decimal, char } from "drizzle-orm/pg-core";
+import { pgSchema, text, varchar, timestamp, boolean, integer, jsonb, uuid, primaryKey, decimal, char, bigint } from "drizzle-orm/pg-core";
 
 
 export const appSchema = pgSchema("app");
@@ -323,6 +323,44 @@ export const tenantUsage = appSchema.table("tenant_usage", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+// 20. NOTIFICACIONES
+export const notifications = appSchema.table("notifications", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  recipientUserId: uuid("recipient_user_id").notNull().references(() => platformUsers.id, { onDelete: "cascade" }),
+  type: varchar("type", { length: 100 }).notNull(),
+  title: varchar("title", { length: 250 }).notNull(),
+  body: text("body").notNull(),
+  data: jsonb("data").notNull().default({}),
+  priority: varchar("priority", { length: 20 }).notNull().default("NORMAL"),
+  readAt: timestamp("read_at", { withTimezone: true }),
+  archivedAt: timestamp("archived_at", { withTimezone: true }),
+  expiresAt: timestamp("expires_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// 21. ARCHIVOS (FILES)
+export const files = appSchema.table("files", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  uploadedBy: uuid("uploaded_by").references(() => platformUsers.id, { onDelete: "set null" }),
+  storageProvider: varchar("storage_provider", { length: 50 }).notNull().default("LOCAL"),
+  bucket: varchar("bucket", { length: 150 }),
+  objectKey: text("object_key").notNull(),
+  originalName: varchar("original_name", { length: 500 }).notNull(),
+  mimeType: varchar("mime_type", { length: 200 }).notNull(),
+  sizeBytes: bigint("size_bytes", { mode: "number" }).notNull(),
+  checksumSha256: varchar("checksum_sha256", { length: 64 }),
+  visibility: varchar("visibility", { length: 20 }).notNull().default("PRIVATE"),
+  status: varchar("status", { length: 20 }).notNull().default("ACTIVE"),
+  metadata: jsonb("metadata").notNull().default({}),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  deletedAt: timestamp("deleted_at", { withTimezone: true }),
+  deletedBy: uuid("deleted_by").references(() => platformUsers.id, { onDelete: "set null" }),
+});
+
 
 
 

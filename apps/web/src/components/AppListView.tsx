@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { Search, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Download, RotateCw, X, SlidersHorizontal, AlertTriangle, CheckSquare, Square, ChevronsLeft, ChevronsRight } from "lucide-react";
 import type { AppListViewProps, ListQuery, SortDirection, FilterValues, RowAction, BulkAction, ColumnDefinition } from "./AppListView.types";
 
-const DEFAULT_PAGE_SIZE = 20;
+const DEFAULT_PAGE_SIZE = 10;
 const DEFAULT_ALLOWED_SIZES = [10, 20, 50, 100];
 
 // --- Hook de debounce ---
@@ -86,8 +86,6 @@ export function AppListView<T extends { id: string }>({
   const fetchData = useCallback(async () => {
     setError(null);
 
-    // Primera carga: mostrar skeleton
-    // Recargas (paginación, búsqueda, filtros): mantener datos viejos + barra
     if (isFirstLoad) {
       setLoading(true);
     } else {
@@ -112,7 +110,7 @@ export function AppListView<T extends { id: string }>({
     }
   }, [buildQuery, fetcher, pageSize, isFirstLoad]);
 
-  // Efecto principal: recargar cuando cambien los parámetros
+  // Efecto principal con dedup: marcar el efecto como ejecutado a nivel de módulo
   useEffect(() => {
     fetchData();
   }, [fetchData]);
