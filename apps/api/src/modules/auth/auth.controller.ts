@@ -1,7 +1,7 @@
 import type { Context } from "hono";
 import { setCookie, getCookie, deleteCookie } from "hono/cookie";
 import { AuthService } from "./auth.service";
-import { loginSchema, refreshSchema } from "./auth.schema";
+import { loginSchema, refreshSchema, forgotPasswordSchema, resetPasswordSchema } from "./auth.schema";
 import { ValidationError, UnauthorizedError } from "../../common/errors";
 
 export class AuthController {
@@ -101,6 +101,57 @@ export class AuthController {
       data: {
         message: "Sesión cerrada exitosamente.",
       },
+      meta: null,
+      traceId: c.get("traceId" as any),
+    });
+  };
+
+  forgotPassword = async (c: Context) => {
+    const body = await c.req.json().catch(() => ({}));
+    
+    const parsed = forgotPasswordSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new ValidationError("Los datos enviados no son válidos.", parsed.error.issues);
+    }
+
+    const ipAddress = c.req.header("x-forwarded-for") || c.req.header("x-real-ip");
+    const userAgent = c.req.header("user-agent");
+
+    const result = await this.service.requestPasswordReset(
+      parsed.data.email,
+      ipAddress,
+      userAgent
+    );
+
+    return c.json({
+      success: true,
+      data: result,
+      meta: null,
+      traceId: c.get("traceId" as any),
+    });
+  };
+
+  resetPassword = async (c: Context) => {
+    const body = await c.req.json().catch(() => ({}));
+
+    const parsed = resetPasswordSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new ValidationError("Los datos enviados no son válidos.", parsed.error.issues);
+    }
+
+    const ipAddress = c.req.header("x-forwarded-for") || c.req.header("x-real-ip");
+    const userAgent = c.req.header("user-agent");
+
+    const result = await this.service.resetPassword(
+      parsed.data.token,
+      parsed.data.password,
+      ipAddress,
+      userAgent
+    );
+
+    return c.json({
+      success: true,
+      data: result,
       meta: null,
       traceId: c.get("traceId" as any),
     });

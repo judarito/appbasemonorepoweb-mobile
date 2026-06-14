@@ -147,6 +147,16 @@ export const refreshTokens = appSchema.table("refresh_tokens", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+// PASSWORD RESET TOKENS
+export const passwordResetTokens = appSchema.table("password_reset_tokens", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().references(() => platformUsers.id, { onDelete: "cascade" }),
+  tokenHash: text("token_hash").notNull(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  usedAt: timestamp("used_at", { withTimezone: true }),
+});
+
 // 10. MENÚS DINÁMICOS
 export const menus = appSchema.table("menus", {
   id: uuid("id").primaryKey().defaultRandom(),

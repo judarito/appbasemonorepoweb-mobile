@@ -832,15 +832,15 @@ Implementar autenticación completa y segura.
 
 ## 15.4 Recuperación de contraseña
 
-- [ ] BF-0740 Crear solicitud de recuperación.
-- [ ] BF-0741 Generar token de un solo uso.
-- [ ] BF-0742 Guardar hash del token.
-- [ ] BF-0743 Definir expiración.
-- [ ] BF-0744 Crear plantilla de correo.
-- [ ] BF-0745 Crear endpoint de cambio por token.
-- [ ] BF-0746 Invalidar token después de usarlo.
-- [ ] BF-0747 Cerrar sesiones después del cambio.
-- [ ] BF-0748 Registrar auditoría.
+- [x] BF-0740 Crear solicitud de recuperación.
+- [x] BF-0741 Generar token de un solo uso.
+- [x] BF-0742 Guardar hash del token.
+- [x] BF-0743 Definir expiración.
+- [x] BF-0744 Crear plantilla de correo.
+- [x] BF-0745 Crear endpoint de cambio por token.
+- [x] BF-0746 Invalidar token después de usarlo.
+- [x] BF-0747 Cerrar sesiones después del cambio.
+- [x] BF-0748 Registrar auditoría.
 
 ## 15.5 Claims del access token
 
@@ -1476,23 +1476,23 @@ Crear una base móvil reusable y nativa.
 
 ## Tareas
 
-- [ ] BF-1901 Crear pantalla de splash.
-- [ ] BF-1902 Crear login.
-- [ ] BF-1903 Crear recuperación de contraseña.
-- [ ] BF-1904 Crear navegación protegida.
-- [ ] BF-1905 Crear tabs.
-- [ ] BF-1906 Crear drawer opcional.
-- [ ] BF-1907 Cargar menú dinámico.
-- [ ] BF-1908 Crear pantalla de inicio.
-- [ ] BF-1909 Crear perfil.
-- [ ] BF-1910 Crear configuración.
-- [ ] BF-1911 Crear notificaciones.
-- [ ] BF-1912 Crear tema claro y oscuro.
-- [ ] BF-1913 Guardar tokens en almacenamiento seguro.
-- [ ] BF-1914 Restaurar sesión.
-- [ ] BF-1915 Rotar refresh token.
-- [ ] BF-1916 Cerrar sesión.
-- [ ] BF-1917 Manejar pérdida de conectividad.
+- [x] BF-1901 Crear pantalla de splash.
+- [x] BF-1902 Crear login.
+- [x] BF-1903 Crear recuperación de contraseña.
+- [x] BF-1904 Crear navegación protegida.
+- [x] BF-1905 Crear tabs.
+- [-] BF-1906 Crear drawer opcional.
+- [-] BF-1907 Cargar menú dinámico.
+- [x] BF-1908 Crear pantalla de inicio.
+- [x] BF-1909 Crear perfil.
+- [-] BF-1910 Crear configuración.
+- [-] BF-1911 Crear notificaciones.
+- [x] BF-1912 Crear tema claro y oscuro.
+- [x] BF-1913 Guardar tokens en almacenamiento seguro.
+- [x] BF-1914 Restaurar sesión.
+- [-] BF-1915 Rotar refresh token.
+- [x] BF-1916 Cerrar sesión.
+- [x] BF-1917 Manejar pérdida de conectividad.
 - [ ] BF-1918 Crear páginas de error.
 - [ ] BF-1919 Configurar deep linking.
 - [ ] BF-1920 Validar Android.

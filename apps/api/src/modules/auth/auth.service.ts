@@ -1,10 +1,13 @@
 import { db } from "../../database/db";
-import { platformUsers, tenants, tenantUsers, userSessions, refreshTokens, userRoles, roles, rolePermissions, permissions } from "../../database/schema";
-import { eq, and, isNull, sql } from "drizzle-orm";
+import { platformUsers, tenants, tenantUsers, userSessions, refreshTokens, userRoles, roles, rolePermissions, permissions, passwordResetTokens } from "../../database/schema";
+import { eq, and, isNull, sql, inArray } from "drizzle-orm";
 import { sign, verify } from "hono/jwt";
 import { env } from "../../config/env";
 import { UnauthorizedError, NotFoundError, ConflictError } from "../../common/errors";
 import { auditService } from "../../common/audit.service";
+import { emailService } from "../../common/email.service";
+import { logger } from "../../middlewares/logger";
+import crypto from "crypto";
 import type { LoginInput } from "./auth.schema";
 
 export interface TokenPayload {
@@ -403,5 +406,147 @@ export class AuthService {
       },
       env.JWT_REFRESH_SECRET
     );
+  }
+
+  async requestPasswordReset(email: string, ipAddress?: string, userAgent?: string) {
+    const user = await db
+      .select()
+      .from(platformUsers)
+      .where(and(eq(platformUsers.email, email.toLowerCase()), isNull(platformUsers.deletedAt)))
+      .limit(1)
+      .then((res) => res[0]);
+
+    // Evitar enumeración de cuentas: si no existe, retornamos éxito simulado
+    if (!user) {
+      logger.info(`Solicitud de recuperación de contraseña recibida para correo no registrado: ${email}`);
+      return { success: true, message: "Si la dirección de correo existe, se ha enviado un enlace de recuperación." };
+    }
+
+    // Generar un token aleatorio seguro de 32 bytes en formato hex
+    const token = crypto.randomBytes(32).toString("hex");
+    const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hora de expiración
+
+    // Guardar en base de datos
+    await db.insert(passwordResetTokens).values({
+      userId: user.id,
+      tokenHash,
+      expiresAt,
+      requestedIp: ipAddress || null,
+      requestedUserAgent: userAgent || null,
+    });
+
+    // Enviar correo electrónico
+    await emailService.sendPasswordResetEmail(user.email, token);
+
+    // Auditoría
+    auditService.log({
+      tenantId: null,
+      actorUserId: user.id,
+      action: "AUTH_PASSWORD_RESET_REQUESTED",
+      entityType: "USER",
+      entityId: user.id,
+      result: "SUCCESS",
+      ipAddress,
+      userAgent,
+      metadata: { email: user.email },
+    });
+
+    return { success: true, message: "Si la dirección de correo existe, se ha enviado un enlace de recuperación." };
+  }
+
+  async resetPassword(token: string, passwordNew: string, ipAddress?: string, userAgent?: string) {
+    const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+
+    // Buscar el token activo
+    const resetToken = await db
+      .select()
+      .from(passwordResetTokens)
+      .where(
+        and(
+          eq(passwordResetTokens.tokenHash, tokenHash),
+          isNull(passwordResetTokens.usedAt)
+        )
+      )
+      .limit(1)
+      .then((res) => res[0]);
+
+    if (!resetToken) {
+      throw new UnauthorizedError("El enlace de recuperación no es válido o ya ha sido utilizado.");
+    }
+
+    // Validar expiración
+    if (new Date() > resetToken.expiresAt) {
+      throw new UnauthorizedError("El enlace de recuperación ha expirado.");
+    }
+
+    // Buscar el usuario
+    const user = await db
+      .select()
+      .from(platformUsers)
+      .where(and(eq(platformUsers.id, resetToken.userId), isNull(platformUsers.deletedAt)))
+      .limit(1)
+      .then((res) => res[0]);
+
+    if (!user) {
+      throw new NotFoundError("Usuario no encontrado.");
+    }
+
+    // Hashear nueva contraseña
+    const passwordHash = await Bun.password.hash(passwordNew);
+
+    // Iniciar transacción para actualizar contraseña, marcar token como usado e invalidar sesiones
+    await db.transaction(async (tx) => {
+      // 1. Actualizar contraseña del usuario y subir tokenVersion
+      await tx
+        .update(platformUsers)
+        .set({
+          passwordHash,
+          passwordChangedAt: new Date(),
+          tokenVersion: user.tokenVersion + 1,
+          failedLoginAttempts: 0,
+        })
+        .where(eq(platformUsers.id, user.id));
+
+      // 2. Marcar token como utilizado
+      await tx
+        .update(passwordResetTokens)
+        .set({ usedAt: new Date() })
+        .where(eq(passwordResetTokens.id, resetToken.id));
+
+      // 3. Revocar todas las sesiones del usuario
+      const sessions = await tx
+        .select({ id: userSessions.id })
+        .from(userSessions)
+        .where(and(eq(userSessions.userId, user.id), eq(userSessions.status, "ACTIVE")));
+
+      if (sessions.length > 0) {
+        const sessionIds = sessions.map((s) => s.id);
+        await tx
+          .update(userSessions)
+          .set({ status: "REVOKED", revokedAt: new Date(), revokeReason: "PASSWORD_CHANGED" })
+          .where(inArray(userSessions.id, sessionIds));
+        
+        await tx
+          .update(refreshTokens)
+          .set({ revokedAt: new Date() })
+          .where(inArray(refreshTokens.sessionId, sessionIds));
+      }
+    });
+
+    // Auditoría
+    auditService.log({
+      tenantId: null,
+      actorUserId: user.id,
+      action: "AUTH_PASSWORD_RESET_COMPLETED",
+      entityType: "USER",
+      entityId: user.id,
+      result: "SUCCESS",
+      ipAddress,
+      userAgent,
+      metadata: { email: user.email },
+    });
+
+    return { success: true, message: "Contraseña actualizada con éxito." };
   }
 }
